@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import platform
 from dotenv import load_dotenv
 from utils.embedder import load_vector_store, embed_text
 from utils.router import route_query
@@ -666,9 +667,11 @@ Answer the question completely using the information above. Structure your respo
         import signal
         
         # Check if we should disable signal-based timeouts (e.g., when running in Flask)
-        use_signal_timeout = os.environ.get('DISABLE_SIGNAL_TIMEOUT') != '1'
+        # Also disable on Windows where signal.SIGALRM is not available
+        use_signal_timeout = (os.environ.get('DISABLE_SIGNAL_TIMEOUT') != '1' and 
+                             platform.system() != 'Windows')
         
-        # Timeout handler to prevent hanging
+        # Timeout handler to prevent hanging (Unix/macOS only)
         class TimeoutError(Exception):
             pass
         
@@ -685,6 +688,7 @@ Answer the question completely using the information above. Structure your respo
             while retry_count < max_retries:
                 try:
                     # Set 60 second timeout for LLM calls (reduced from 90s for faster failure)
+                    # Signal timeouts only available on Unix/macOS, not Windows
                     if use_signal_timeout:
                         signal.signal(signal.SIGALRM, timeout_handler)
                         signal.alarm(60)
