@@ -433,7 +433,7 @@ def check_faq(query: str) -> str:
             
             score = question_overlap * 0.7 + tag_overlap * 0.3
             
-            if score > highest_score and score > 0.4:  # Threshold for match
+            if score > highest_score and score > 0.5:  # Increased threshold from 0.4 to 0.5
                 highest_score = score
                 best_match = faq_data
         
@@ -450,19 +450,20 @@ def check_faq(query: str) -> str:
 def answer_with_llm(query: str, context_chunks: list):
     """Generate answer using local Ollama LLM or fallback to Hugging Face."""
     
-    # Check FAQ first for common questions
+    # Pre-filter: Check if question is tax-related FIRST before checking FAQ
+    if not is_tax_related_query(query):
+        return "I apologize, but I can only answer questions about Indian taxation. Please ask a question related to income tax, GST, capital gains, deductions, or other Indian tax matters."
+    
+    # Check if we have relevant context from search
+    if not context_chunks or len(context_chunks) == 0:
+        # If no context from RAG search, don't try FAQ - query is off-topic
+        return "I couldn't find relevant information about this in my tax knowledge base. Please try rephrasing your question or ask about a specific tax topic."
+    
+    # Now check FAQ for common questions (only if we have tax context or high confidence match)
     faq_answer = check_faq(query)
     if faq_answer:
         print("[faq] Found answer in FAQ database")
         return faq_answer
-    
-    # Pre-filter: Check if question is tax-related before calling LLM
-    if not is_tax_related_query(query):
-        return "I apologize, but I can only answer questions about Indian taxation. Please ask a question related to income tax, GST, capital gains, deductions, or other Indian tax matters."
-    
-    # Check if we have relevant context
-    if not context_chunks:
-        return "I couldn't find relevant information about this in my tax knowledge base. Please try rephrasing your question or ask about a different topic."
     
     # Check chunk quality: warn if chunks are too short (may indicate poor retrieval)
     avg_chunk_length = sum(len(c.get('text', '')) for c in context_chunks) / len(context_chunks)
