@@ -163,90 +163,118 @@ def is_tax_related_query(query: str) -> bool:
         'cgst', 'sgst', 'igst', 'hsn', 'rate', 'slab', 'bracket',
         'depreciation', 'investment', 'savings', 'cess', 'surcharge',
         'financial year', 'assessment year', 'filing', 'compliance',
+        'pan', 'aadhaar', 'tds', 'itr', 'form 16', 'form16',
+        'hra', 'lta', 'medical', 'insurance', 'premium',
+        'fd', 'fixed deposit', 'ppf', 'elss', 'nsc', 'mutual fund',
+        'ltcg', 'stcg', 'dividend', 'interest',
+        'section 80c', 'section 80d', 'section 80e', 'section 80g',
+        'presumptive', 'advance tax', 'self-assessment',
+        'carried forward', 'loss', 'profit',
         # Section numbers
         '80c', '80d', '80e', '80g', '80gg', '80u', '80dd', '80ddb',
-        '44', '24', '54', '111a', '10', '16',
+        '44', '24', '54', '111a', '10', '16', '112a',
     ]
     
     # Negative keywords (topics that are NOT tax-related)
+    # Use word boundary matching to avoid false positives
     non_tax_keywords = [
-        # Weather & Nature
-        'weather', 'climate', 'temperature', 'rain', 'snow', 'wind', 'storm',
-        'hurricane', 'earthquake', 'tsunami', 'flood', 'drought', 'forest',
-        'ocean', 'river', 'mountain', 'valley', 'desert', 'wildlife', 'animal',
+        # Weather & Nature (word boundaries important)
+        r'\bweather\b', r'\bclimate\b', r'\btemperature\b', r'\brain\b', 
+        r'\bsnow\b', r'\bwind\b', r'\bstorm\b', r'\bhurricane\b', r'\bearthquake\b',
+        r'\btsunami\b', r'\bflood\b', r'\bdrought\b', r'\bforest\b',
+        r'\bocean\b', r'\briver\b', r'\bmountain\b', r'\bvalley\b', 
+        r'\bdesert\b', r'\bwildlife\b', r'\banimal\b',
         
         # Sports & Games
-        'cricket', 'sports', 'football', 'basketball', 'tennis', 'volleyball',
-        'badminton', 'hockey', 'soccer', 'rugby', 'golf', 'baseball', 'cricket',
-        'boxing', 'wrestling', 'swimming', 'chess', 'poker', 'game', 'gaming',
-        'esports', 'olympiad', 'world cup', 'tournament', 'league', 'match',
+        r'\bcricket\b', r'\bsports\b', r'\bfootball\b', r'\bbasketball\b', 
+        r'\btennis\b', r'\bvolleyball\b', r'\bbadminton\b', r'\bhockey\b',
+        r'\bsoccer\b', r'\brugby\b', r'\bgolf\b', r'\bbaseball\b',
+        r'\bboxing\b', r'\bwrestling\b', r'\bswimming\b', r'\bchess\b', 
+        r'\bpoker\b', r'\bgame\b', r'\bgaming\b', r'\besports\b',
+        r'\bolympiad\b', r'\btournament\b', r'\bleague\b', r'\bmatch\b',
         
         # Entertainment & Media
-        'movie', 'film', 'cinema', 'actor', 'actress', 'director', 'comedy',
-        'drama', 'thriller', 'horror', 'action', 'romance', 'anime', 'cartoon',
-        'tv show', 'series', 'episode', 'netflix', 'youtube', 'streaming',
-        'music', 'song', 'singer', 'band', 'concert', 'album', 'track',
-        'podcast', 'radio', 'audio', 'podcast', 'book', 'novel', 'author',
-        'literature', 'writer', 'poetry', 'verse', 'comedy', 'joke', 'funny',
-        'humor', 'laugh', 'prank', 'viral', 'meme', 'trending',
+        r'\bmovie\b', r'\bfilm\b', r'\bcinema\b', r'\bactor\b', 
+        r'\bactress\b', r'\bdirector\b', r'\bcomedy\b', r'\bdrama\b',
+        r'\bthriller\b', r'\bhorror\b', r'\baction\b', r'\bromance\b',
+        r'\banime\b', r'\bcartoon\b', r'\bseries\b', r'\bepisode\b',
+        r'\bnetflix\b', r'\byoutube\b', r'\bstreaming\b',
+        r'\bmusic\b', r'\bsong\b', r'\bsinger\b', r'\bband\b', 
+        r'\bconcert\b', r'\balbum\b', r'\btrack\b', r'\bpodcast\b',
+        r'\bradio\b', r'\baudio\b', r'\bbook\b', r'\bnovel\b',
+        r'\bauthor\b', r'\bliterature\b', r'\bwriter\b', r'\bpoetry\b',
+        r'\bverse\b', r'\bjoke\b', r'\bfunny\b', r'\bhumor\b', 
+        r'\blaugh\b', r'\bprank\b', r'\bviral\b', r'\bmeme\b', r'\btrending\b',
         
         # Food & Cooking
-        'cooking', 'recipe', 'restaurant', 'food', 'cuisine', 'dish', 'meal',
-        'breakfast', 'lunch', 'dinner', 'snack', 'dessert', 'cake', 'cookie',
-        'pizza', 'burger', 'pasta', 'rice', 'bread', 'coffee', 'tea', 'wine',
-        'beer', 'juice', 'smoothie', 'bakery', 'cafe', 'kitchen', 'cook',
+        r'\bcooking\b', r'\brecipe\b', r'\brestaurant\b', r'\bfood\b',
+        r'\bcuisine\b', r'\bdish\b', r'\bmeal\b', r'\bbreakfast\b',
+        r'\blunch\b', r'\bdinner\b', r'\bsnack\b', r'\bdessert\b',
+        r'\bcake\b', r'\bcookie\b', r'\bpizza\b', r'\bburger\b',
+        r'\bpasta\b', r'\brice\b', r'\bbread\b', r'\bcoffee\b',
+        r'\btea\b', r'\bwine\b', r'\bbeer\b', r'\bjuice\b',
+        r'\bsmoothie\b', r'\bbakery\b', r'\bcafe\b', r'\bkitchen\b',
         
         # Travel & Transportation
-        'travel', 'vacation', 'holiday', 'hotel', 'motel', 'hostel', 'resort',
-        'flight', 'airplane', 'airport', 'train', 'railway', 'bus', 'car',
-        'bike', 'motorcycle', 'vehicle', 'taxi', 'uber', 'travel agency',
-        'tourism', 'destination', 'country', 'city', 'beach', 'cruise',
-        'passport', 'visa', 'tour', 'itinerary', 'map', 'navigation', 'gps',
+        r'\btravel\b', r'\bvacation\b', r'\bholiday\b', r'\bhotel\b',
+        r'\bmotel\b', r'\bhostel\b', r'\bresort\b', r'\bflight\b',
+        r'\bairplane\b', r'\bairport\b', r'\btrain\b', r'\brailway\b',
+        r'\bbus\b', r'\bcar\b', r'\bbike\b', r'\bmotorcycle\b',
+        r'\bvehicle\b', r'\btaxi\b', r'\buber\b', r'\btourism\b',
+        r'\bdestination\b', r'\bbeach\b', r'\bcruise\b',
+        r'\bpassport\b', r'\btour\b', r'\bitinerary\b',
         
-        # Politics & Current Events
-        'election', 'politics', 'political', 'government', 'minister',
-        'parliament', 'congress', 'senate', 'vote', 'campaign', 'party',
-        'democracy', 'president', 'prime minister', 'leader', 'policy',
-        'law enforcement', 'police', 'court', 'judge', 'verdict', 'trial',
-        'news', 'breaking news', 'headlines', 'current events', 'latest',
-        'today', 'yesterday', 'newspaper', 'journalist', 'report', 'scandal',
+        # Politics & Current Events (careful with "policy")
+        r'\belection\b', r'\bpolitics\b', r'\bpolitical\b', r'\bgovernment\b',
+        r'\bminister\b', r'\bparliament\b', r'\bcongress\b', r'\bsenate\b',
+        r'\bvote\b', r'\bcampaign\b', r'\bparty\b', r'\bdemocracy\b',
+        r'\bpresident\b', r'\bprime\s+minister\b', r'\bleader\b',
+        r'\bpolice\b', r'\bcourt\b', r'\bjudge\b', r'\bverdict\b',
+        r'\btrial\b', r'\bnews\b', r'\bheadlines\b', r'\blatest\b',
+        r'\bnewspaper\b', r'\bjournalist\b', r'\breport\b', r'\bscandal\b',
         
         # Science & Technology (Non-tax)
-        'physics', 'chemistry', 'biology', 'astronomy', 'space', 'moon',
-        'planet', 'star', 'galaxy', 'rocket', 'satellite', 'nasa', 'science',
-        'experiment', 'research', 'discovery', 'technology', 'software',
-        'programming', 'coding', 'app', 'computer', 'phone', 'gadget',
-        'robot', 'ai', 'machine learning', 'data science', 'internet',
-        'wifi', 'network', 'cybersecurity', 'hacking', 'virus', 'malware',
+        r'\bphysics\b', r'\bchemistry\b', r'\bbiology\b', r'\bastronomy\b',
+        r'\bspace\b', r'\bmoon\b', r'\bplanet\b', r'\bstar\b',
+        r'\bgalaxy\b', r'\brocket\b', r'\bsatellite\b', r'\bnasa\b',
+        r'\bscience\b', r'\bexperiment\b', r'\bresearch\b', r'\bdiscovery\b',
+        r'\bsoftware\b', r'\bprogramming\b', r'\bcoding\b', r'\bapp\b',
+        r'\bcomputer\b', r'\bphone\b', r'\bgadget\b', r'\brobot\b',
+        r'\bai\b', r'\bmachine\s+learning\b', r'\bdata\s+science\b',
+        r'\binternet\b', r'\bwifi\b', r'\bnetwork\b', r'\bcybersecurity\b',
+        r'\bhacking\b', r'\bvirus\b', r'\bmalware\b',
         
         # Health & Medicine
-        'health', 'disease', 'medicine', 'doctor', 'hospital', 'surgery',
-        'vaccine', 'covid', 'virus', 'treatment', 'symptom', 'cure',
-        'fitness', 'exercise', 'gym', 'yoga', 'diet', 'nutrition', 'weight',
-        'mental health', 'psychology', 'therapy', 'counseling', 'depression',
-        'anxiety', 'medication', 'drug', 'pharmaceutical', 'healthcare',
+        r'\bhealth\b', r'\bdisease\b', r'\bmedicine\b', r'\bdoctor\b',
+        r'\bhospital\b', r'\bsurgery\b', r'\bvaccine\b', r'\bcovid\b',
+        r'\btreatment\b', r'\bsymptom\b', r'\bcure\b', r'\bfitness\b',
+        r'\bexercise\b', r'\bgym\b', r'\byoga\b', r'\bdiet\b',
+        r'\bnutrition\b', r'\bweight\b', r'\bmental\s+health\b',
+        r'\bpsychology\b', r'\btherapy\b', r'\bcounseling\b',
+        r'\bdepression\b', r'\banxiety\b', r'\bmedication\b',
+        r'\bdrug\b', r'\bpharmaceutical\b', r'\bhealthcare\b',
         
         # Relationships & Personal
-        'love', 'marriage', 'dating', 'relationship', 'breakup', 'divorce',
-        'friend', 'family', 'parent', 'child', 'baby', 'wedding', 'gift',
-        'personality', 'hobby', 'interest', 'talent', 'skill', 'career',
-        'job search', 'interview', 'resume', 'promotion', 'salary negotiation',
+        r'\blove\b', r'\bmarriage\b', r'\bdating\b', r'\brelationship\b',
+        r'\bbreakup\b', r'\bdivorce\b', r'\bfriend\b', r'\bfamily\b',
+        r'\bparent\b', r'\bchild\b', r'\bbaby\b', r'\bwedding\b',
+        r'\bgift\b', r'\bpersonality\b', r'\bhobby\b',
+        r'\binterest\b', r'\btalent\b', r'\bskill\b',
+        r'\bcareer\b', r'\bjob\s+search\b', r'\binterview\b',
+        r'\bresume\b', r'\bpromotion\b',
         
         # Education & Learning
-        'school', 'college', 'university', 'student', 'teacher', 'professor',
-        'exam', 'test', 'grade', 'homework', 'assignment', 'course', 'class',
-        'learning', 'study', 'education', 'training', 'certification',
-        'degree', 'diploma', 'scholarship', 'admission', 'entrance',
-        
-        # Miscellaneous
-        'how to', 'diy', 'tutorial', 'tips', 'tricks', 'hack', 'guide',
-        'story', 'history', 'historical', 'culture', 'tradition', 'religion',
-        'mythology', 'legend', 'folklore', 'art', 'painting', 'sculpture',
-        'fashion', 'clothing', 'style', 'makeup', 'beauty', 'cosmetics',
+        r'\bschool\b', r'\bcollege\b', r'\buniversity\b', r'\bstudent\b',
+        r'\bteacher\b', r'\bprofessor\b', r'\bexam\b', r'\btest\b',
+        r'\bgrade\b', r'\bhomework\b', r'\bassignment\b', r'\bcourse\b',
+        r'\bclass\b', r'\blearning\b', r'\bstudy\b', r'\beducation\b',
+        r'\btraining\b', r'\bcertification\b', r'\bdegree\b',
+        r'\bdiploma\b', r'\bscholarship\b', r'\badmission\b',
     ]
     
-    # If contains strong non-tax keywords, reject immediately
-    if any(keyword in query_lower for keyword in non_tax_keywords):
+    # If contains strong non-tax keywords (word boundary match), reject immediately
+    import re
+    if any(re.search(pattern, query_lower) for pattern in non_tax_keywords):
         return False
     
     # Check if any tax keyword is present
