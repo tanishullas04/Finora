@@ -168,6 +168,18 @@ def is_tax_related_query(query: str) -> bool:
         '44', '24', '54', '111a', '10', '16',
     ]
     
+    # Negative keywords (topics that are NOT tax-related)
+    non_tax_keywords = [
+        'weather', 'cricket', 'sports', 'joke', 'movie', 'actor', 'actress',
+        'singer', 'music', 'football', 'basketball', 'tennis', 'cooking',
+        'recipe', 'restaurant', 'travel', 'vacation', 'hotel', 'flight',
+        'car', 'bike', 'vehicle', 'election', 'politics', 'news'
+    ]
+    
+    # If contains strong non-tax keywords, reject immediately
+    if any(keyword in query_lower for keyword in non_tax_keywords):
+        return False
+    
     # Check if any tax keyword is present
     has_tax_keyword = any(keyword in query_lower for keyword in tax_keywords)
     
@@ -908,25 +920,29 @@ def add_source_citations(answer: str, context_chunks: list) -> str:
         print("[sources] No chunks provided")
         return answer
     
-    # Extract unique sources from top chunks
+    # Extract unique sources from ALL chunks (not just top 3)
     sources = []
     seen_sources = set()
     
-    for i, chunk in enumerate(context_chunks[:3]):  # Top 3 most relevant sources
+    # Try to extract from all chunks, not just first 3
+    for i, chunk in enumerate(context_chunks):
         # Handle both dict with 'metadata' and raw text chunks
         if isinstance(chunk, dict):
             metadata = chunk.get('metadata', {})
             if isinstance(metadata, dict):
-                source = metadata.get('source', 'Tax Document')
+                source = metadata.get('source', '')
             else:
-                source = 'Tax Document'
+                source = ''
         else:
-            source = 'Tax Document'
+            source = ''
         
-        # Clean up source name and add if meaningful
-        if source and source != 'Tax Document' and source not in seen_sources:
+        # Clean up source name and add if meaningful and not seen
+        if source and source not in seen_sources:
             sources.append(source)
             seen_sources.add(source)
+            # Stop after collecting meaningful sources (max 3)
+            if len(sources) >= 3:
+                break
     
     # Always add sources if we have meaningful ones
     if sources:
@@ -934,11 +950,9 @@ def add_source_citations(answer: str, context_chunks: list) -> str:
         citation = "\n\n📚 **Sources:** " + ", ".join(sources)
         return answer + citation
     else:
-        print(f"[sources] No meaningful sources found from {len(context_chunks[:3])} chunks")
+        print(f"[sources] No meaningful sources found from {len(context_chunks)} chunks")
     
     # Return answer unchanged if no sources found
-    return answer
-    
     return answer
 
 
