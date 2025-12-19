@@ -170,10 +170,79 @@ def is_tax_related_query(query: str) -> bool:
     
     # Negative keywords (topics that are NOT tax-related)
     non_tax_keywords = [
-        'weather', 'cricket', 'sports', 'joke', 'movie', 'actor', 'actress',
-        'singer', 'music', 'football', 'basketball', 'tennis', 'cooking',
-        'recipe', 'restaurant', 'travel', 'vacation', 'hotel', 'flight',
-        'car', 'bike', 'vehicle', 'election', 'politics', 'news'
+        # Weather & Nature
+        'weather', 'climate', 'temperature', 'rain', 'snow', 'wind', 'storm',
+        'hurricane', 'earthquake', 'tsunami', 'flood', 'drought', 'forest',
+        'ocean', 'river', 'mountain', 'valley', 'desert', 'wildlife', 'animal',
+        
+        # Sports & Games
+        'cricket', 'sports', 'football', 'basketball', 'tennis', 'volleyball',
+        'badminton', 'hockey', 'soccer', 'rugby', 'golf', 'baseball', 'cricket',
+        'boxing', 'wrestling', 'swimming', 'chess', 'poker', 'game', 'gaming',
+        'esports', 'olympiad', 'world cup', 'tournament', 'league', 'match',
+        
+        # Entertainment & Media
+        'movie', 'film', 'cinema', 'actor', 'actress', 'director', 'comedy',
+        'drama', 'thriller', 'horror', 'action', 'romance', 'anime', 'cartoon',
+        'tv show', 'series', 'episode', 'netflix', 'youtube', 'streaming',
+        'music', 'song', 'singer', 'band', 'concert', 'album', 'track',
+        'podcast', 'radio', 'audio', 'podcast', 'book', 'novel', 'author',
+        'literature', 'writer', 'poetry', 'verse', 'comedy', 'joke', 'funny',
+        'humor', 'laugh', 'prank', 'viral', 'meme', 'trending',
+        
+        # Food & Cooking
+        'cooking', 'recipe', 'restaurant', 'food', 'cuisine', 'dish', 'meal',
+        'breakfast', 'lunch', 'dinner', 'snack', 'dessert', 'cake', 'cookie',
+        'pizza', 'burger', 'pasta', 'rice', 'bread', 'coffee', 'tea', 'wine',
+        'beer', 'juice', 'smoothie', 'bakery', 'cafe', 'kitchen', 'cook',
+        
+        # Travel & Transportation
+        'travel', 'vacation', 'holiday', 'hotel', 'motel', 'hostel', 'resort',
+        'flight', 'airplane', 'airport', 'train', 'railway', 'bus', 'car',
+        'bike', 'motorcycle', 'vehicle', 'taxi', 'uber', 'travel agency',
+        'tourism', 'destination', 'country', 'city', 'beach', 'cruise',
+        'passport', 'visa', 'tour', 'itinerary', 'map', 'navigation', 'gps',
+        
+        # Politics & Current Events
+        'election', 'politics', 'political', 'government', 'minister',
+        'parliament', 'congress', 'senate', 'vote', 'campaign', 'party',
+        'democracy', 'president', 'prime minister', 'leader', 'policy',
+        'law enforcement', 'police', 'court', 'judge', 'verdict', 'trial',
+        'news', 'breaking news', 'headlines', 'current events', 'latest',
+        'today', 'yesterday', 'newspaper', 'journalist', 'report', 'scandal',
+        
+        # Science & Technology (Non-tax)
+        'physics', 'chemistry', 'biology', 'astronomy', 'space', 'moon',
+        'planet', 'star', 'galaxy', 'rocket', 'satellite', 'nasa', 'science',
+        'experiment', 'research', 'discovery', 'technology', 'software',
+        'programming', 'coding', 'app', 'computer', 'phone', 'gadget',
+        'robot', 'ai', 'machine learning', 'data science', 'internet',
+        'wifi', 'network', 'cybersecurity', 'hacking', 'virus', 'malware',
+        
+        # Health & Medicine
+        'health', 'disease', 'medicine', 'doctor', 'hospital', 'surgery',
+        'vaccine', 'covid', 'virus', 'treatment', 'symptom', 'cure',
+        'fitness', 'exercise', 'gym', 'yoga', 'diet', 'nutrition', 'weight',
+        'mental health', 'psychology', 'therapy', 'counseling', 'depression',
+        'anxiety', 'medication', 'drug', 'pharmaceutical', 'healthcare',
+        
+        # Relationships & Personal
+        'love', 'marriage', 'dating', 'relationship', 'breakup', 'divorce',
+        'friend', 'family', 'parent', 'child', 'baby', 'wedding', 'gift',
+        'personality', 'hobby', 'interest', 'talent', 'skill', 'career',
+        'job search', 'interview', 'resume', 'promotion', 'salary negotiation',
+        
+        # Education & Learning
+        'school', 'college', 'university', 'student', 'teacher', 'professor',
+        'exam', 'test', 'grade', 'homework', 'assignment', 'course', 'class',
+        'learning', 'study', 'education', 'training', 'certification',
+        'degree', 'diploma', 'scholarship', 'admission', 'entrance',
+        
+        # Miscellaneous
+        'how to', 'diy', 'tutorial', 'tips', 'tricks', 'hack', 'guide',
+        'story', 'history', 'historical', 'culture', 'tradition', 'religion',
+        'mythology', 'legend', 'folklore', 'art', 'painting', 'sculpture',
+        'fashion', 'clothing', 'style', 'makeup', 'beauty', 'cosmetics',
     ]
     
     # If contains strong non-tax keywords, reject immediately
