@@ -233,6 +233,18 @@ def is_tax_related_query(query: str) -> bool:
         r'\btrial\b', r'\bnews\b', r'\bheadlines\b', r'\blatest\b',
         r'\bnewspaper\b', r'\bjournalist\b', r'\breport\b', r'\bscandal\b',
         
+        # Geography & Locations (NOT "capital gains")
+        # Using word boundaries to avoid collision with "capital gains"
+        r'\bcapital\b(?!\s+gains)', r'\bcountry\b', r'\bcity\b', 
+        r'\btown\b', r'\bvillage\b', r'\bstate\b', r'\bprovince\b',
+        r'\bregion\b', r'\bdistrict\b', r'\bmap\b', r'\bgeography\b',
+        r'\blocation\b', r'\baddress\b', r'\bstreet\b', r'\broad\b',
+        r'\bbuilding\b', r'\barchitecture\b', r'\blandmark\b',
+        r'\bjapan\b', r'\bchina\b', r'\busa\b', r'\buk\b', r'\bcanada\b',
+        r'\bfrancia\b', r'\bgermany\b', r'\brussia\b', r'\baustria\b',
+        r'\bmexico\b', r'\bbrazil\b', r'\baustralian\b', r'\baustria\b',
+        r'\bafrica\b', r'\beurope\b', r'\basia\b', r'\bamericas\b',
+        
         # Science & Technology (Non-tax)
         r'\bphysics\b', r'\bchemistry\b', r'\bbiology\b', r'\bastronomy\b',
         r'\bspace\b', r'\bmoon\b', r'\bplanet\b', r'\bstar\b',
@@ -275,7 +287,11 @@ def is_tax_related_query(query: str) -> bool:
     # If contains strong non-tax keywords (word boundary match), reject immediately
     import re
     if any(re.search(pattern, query_lower) for pattern in non_tax_keywords):
-        return False
+        # Special case: if it's "capital gains" or similar tax context, don't reject
+        if 'capital gains' in query_lower or 'capital gain' in query_lower:
+            pass  # Allow capital gains to be processed by tax keyword check
+        else:
+            return False
     
     # Check if any tax keyword is present
     has_tax_keyword = any(keyword in query_lower for keyword in tax_keywords)
