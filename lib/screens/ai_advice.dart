@@ -12,7 +12,7 @@ class _AiAdviceScreenState extends State<AiAdviceScreen> {
   final TextEditingController _queryController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FirebaseService _firebaseService = FirebaseService();
-  
+
   bool _loading = false;
   bool _backendHealthy = false;
   List<String> _suggestions = [];
@@ -28,11 +28,13 @@ class _AiAdviceScreenState extends State<AiAdviceScreen> {
   Future<void> _checkBackendHealth() async {
     final healthy = await AiService.checkHealth();
     setState(() => _backendHealthy = healthy);
-    
+
     if (!healthy && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('⚠️ AI backend is offline. Please start the Python server.'),
+          content: Text(
+            '⚠️ AI backend is offline. Please start the Python server.',
+          ),
           backgroundColor: Colors.orange,
           duration: Duration(seconds: 5),
         ),
@@ -43,12 +45,12 @@ class _AiAdviceScreenState extends State<AiAdviceScreen> {
   Future<void> _loadSuggestions() async {
     final income = await _firebaseService.getIncome();
     final deductions = await _firebaseService.getDeductions();
-    
+
     final suggestions = await AiService.getSmartSuggestions(
       income: income?['totalIncome'] ?? 0,
       deductions: deductions?['totalDeductions'] ?? 0,
     );
-    
+
     setState(() => _suggestions = suggestions);
   }
 
@@ -58,7 +60,9 @@ class _AiAdviceScreenState extends State<AiAdviceScreen> {
     if (!_backendHealthy) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('AI backend is not available. Please start the server.'),
+          content: Text(
+            'AI backend is not available. Please start the server.',
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -118,6 +122,49 @@ class _AiAdviceScreenState extends State<AiAdviceScreen> {
     _queryController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  // Parse markdown-style formatting in the message
+  List<TextSpan> _parseMessageText(String content) {
+    final spans = <TextSpan>[];
+    final pattern = RegExp(r'\*\*(.+?)\*\*|\*\s(.+?)(?=\n|\*|$)');
+    int lastIndex = 0;
+
+    for (final match in pattern.allMatches(content)) {
+      // Add text before this match
+      if (match.start > lastIndex) {
+        final text = content.substring(lastIndex, match.start);
+        spans.add(TextSpan(text: text));
+      }
+
+      // Check if it's bold text (**text**)
+      if (match.group(1) != null) {
+        spans.add(
+          TextSpan(
+            text: match.group(1)!,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+        );
+      }
+      // Check if it's a bullet point (* text)
+      else if (match.group(2) != null) {
+        spans.add(
+          TextSpan(
+            text: '• ${match.group(2)!}',
+            style: const TextStyle(fontWeight: FontWeight.w400, fontSize: 15),
+          ),
+        );
+      }
+
+      lastIndex = match.end;
+    }
+
+    // Add remaining text
+    if (lastIndex < content.length) {
+      spans.add(TextSpan(text: content.substring(lastIndex)));
+    }
+
+    return spans.isEmpty ? [TextSpan(text: content)] : spans;
   }
 
   @override
@@ -210,17 +257,21 @@ class _AiAdviceScreenState extends State<AiAdviceScreen> {
             '📈 Capital Gains Tax',
             '🏦 Presumptive Taxation',
             '📝 Tax Filing Requirements',
-          ].map((item) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Text(item, style: const TextStyle(fontSize: 14)),
-          )),
+          ].map(
+            (item) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(item, style: const TextStyle(fontSize: 14)),
+            ),
+          ),
           const SizedBox(height: 24),
           const Text(
             "Quick Questions:",
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
-          ..._suggestions.take(6).map((suggestion) => _buildSuggestionChip(suggestion)),
+          ..._suggestions
+              .take(6)
+              .map((suggestion) => _buildSuggestionChip(suggestion)),
         ],
       ),
     );
@@ -240,9 +291,15 @@ class _AiAdviceScreenState extends State<AiAdviceScreen> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.lightbulb_outline, size: 20, color: Colors.indigo),
+              const Icon(
+                Icons.lightbulb_outline,
+                size: 20,
+                color: Colors.indigo,
+              ),
               const SizedBox(width: 8),
-              Expanded(child: Text(suggestion, style: const TextStyle(fontSize: 14))),
+              Expanded(
+                child: Text(suggestion, style: const TextStyle(fontSize: 14)),
+              ),
             ],
           ),
         ),
@@ -260,7 +317,7 @@ class _AiAdviceScreenState extends State<AiAdviceScreen> {
         final isUser = message['role'] == 'user';
         final isError = message['role'] == 'error';
         final processingTime = message['processing_time'];
-        
+
         return Align(
           alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
           child: Container(
@@ -270,30 +327,36 @@ class _AiAdviceScreenState extends State<AiAdviceScreen> {
               maxWidth: MediaQuery.of(context).size.width * 0.8,
             ),
             decoration: BoxDecoration(
-              color: isUser 
-                  ? Colors.indigo 
-                  : isError 
-                      ? Colors.red.shade100 
-                      : Colors.grey.shade200,
+              color: isUser
+                  ? Colors.indigo
+                  : isError
+                  ? Colors.red.shade100
+                  : Colors.grey.shade200,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  message['content']!,
-                  style: TextStyle(
-                    color: isUser ? Colors.white : Colors.black87,
+                RichText(
+                  text: TextSpan(
+                    children: _parseMessageText(message['content']!),
+                    style: TextStyle(
+                      color: isUser ? Colors.white : Colors.black87,
+                      fontSize: 15,
+                      fontWeight: FontWeight.normal,
+                      height: 1.5,
+                    ),
                   ),
                 ),
                 if (processingTime != null && processingTime.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.only(top: 8),
                     child: Text(
                       '⚡ ${processingTime}s',
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: Colors.black45,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isUser ? Colors.white70 : Colors.black45,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),
