@@ -8,7 +8,7 @@ import 'screens/home.dart';
 import 'screens/income.dart';
 import 'screens/deductions.dart';
 import 'screens/regime_compare.dart';
-import 'screens/gst.dart';
+import 'screens/gst_calculator.dart';
 import 'screens/capital_gains.dart';
 import 'screens/ai_advice.dart';
 import 'screens/summary.dart';
@@ -59,9 +59,9 @@ class TaxApp extends StatelessWidget {
         '/home': (_) => const HomeScreen(),
         '/income': (_) => const IncomeScreen(),
         '/deductions': (_) => const DeductionsScreen(),
-        '/regime_compare': (_) => const RegimeCompareScreen(),
-        '/gst': (_) => const GSTScreen(),
         '/capital_gains': (_) => const CapitalGainsScreen(),
+        '/gst_calculator': (_) => const GSTCalculator(),
+        '/regime_compare': (_) => const RegimeCompareScreen(),
         '/ai_advice': (_) => const AiAdviceScreen(),
         '/summary': (_) => const SummaryScreen(),
       },

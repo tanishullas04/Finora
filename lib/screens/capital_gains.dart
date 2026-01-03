@@ -84,9 +84,9 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
         ltcgOther: ltcgOther,
       );
 
-      // Navigate to regime compare screen
+      // Navigate to GST calculator screen
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/regime_compare');
+      Navigator.pushReplacementNamed(context, '/gst_calculator');
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

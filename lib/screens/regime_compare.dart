@@ -18,6 +18,7 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
   double _totalDeductions = 0;
   double _totalCapitalGains = 0;
   double _ltcgTax = 0;
+  double _totalGSTTax = 0;
 
   @override
   void initState() {
@@ -49,6 +50,10 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
       double ltcgMutualFunds = ((cgData?['ltcgMutualFunds'] ?? 0.0) as num? ?? 0.0).toDouble();
       double ltcgOther = ((cgData?['ltcgOther'] ?? 0.0) as num? ?? 0.0).toDouble();
 
+      // Fetch GST data
+      final gstData = await _firebaseService.getGST();
+      double gstTax = ((gstData?['totalGSTTax'] ?? 0.0) as num? ?? 0.0).toDouble();
+
       // Total income = Regular income + STCG (added to income) 
       // LTCG is taxed separately
       double totalIncome = income + stcgTotal;
@@ -63,6 +68,7 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
         _totalDeductions = deductions;
         _totalCapitalGains = stcgTotal + ltcgRealEstate + ltcgStocks + ltcgMutualFunds + ltcgOther;
         _ltcgTax = ltcgTax;
+        _totalGSTTax = gstTax;
         _oldRegimeTax = oldRegimeTax + ltcgTax; // Add LTCG tax to total
         _newRegimeTax = newRegimeTax + ltcgTax; // Add LTCG tax to total
         _loading = false;
@@ -271,6 +277,7 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
                   "Standard: ₹50,000",
                   "Sections 80C, 80D, 24",
                   if (_ltcgTax > 0) "LTCG: ${_formatCurrency(_ltcgTax)}",
+                  if (_totalGSTTax > 0) "GST: ${_formatCurrency(_totalGSTTax)}",
                 ],
               ),
             ),
@@ -285,6 +292,7 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
                   "Standard: ₹50,000",
                   "Limited deductions",
                   if (_ltcgTax > 0) "LTCG: ${_formatCurrency(_ltcgTax)}",
+                  if (_totalGSTTax > 0) "GST: ${_formatCurrency(_totalGSTTax)}",
                 ],
               ),
             ),

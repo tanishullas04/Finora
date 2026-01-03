@@ -166,28 +166,83 @@ class FirebaseService {
     return doc.data();
   }
 
-  // ==================== GST CALCULATIONS COLLECTION ====================
+  // ==================== GST COLLECTION ====================
   
-  /// Save GST calculation
-  Future<void> saveGSTCalculation({
-    required double amount,
-    required double gstRate,
-    required double gstAmount,
-    required double finalAmount,
+  /// Save GST data
+  Future<void> saveGST({
+    required double gst0Quantity,
+    required double gst0Price,
+    required String gst0HSN,
+    required double gst5Quantity,
+    required double gst5Price,
+    required String gst5HSN,
+    required double gst12Quantity,
+    required double gst12Price,
+    required String gst12HSN,
+    required double gst18Quantity,
+    required double gst18Price,
+    required String gst18HSN,
+    required double gst28Quantity,
+    required double gst28Price,
+    required String gst28HSN,
+    required double itcAmount,
   }) async {
     if (currentUserId == null) throw Exception('User not logged in');
     
-    await _firestore
-        .collection('gstCalculations')
-        .doc(currentUserId)
-        .collection('calculations')
-        .add({
-      'amount': amount,
-      'gstRate': gstRate,
-      'gstAmount': gstAmount,
-      'finalAmount': finalAmount,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+    final gst0Value = gst0Quantity * gst0Price;
+    final gst5Value = gst5Quantity * gst5Price;
+    final gst12Value = gst12Quantity * gst12Price;
+    final gst18Value = gst18Quantity * gst18Price;
+    final gst28Value = gst28Quantity * gst28Price;
+    
+    final gst5Tax = gst5Value * 0.05;
+    final gst12Tax = gst12Value * 0.12;
+    final gst18Tax = gst18Value * 0.18;
+    final gst28Tax = gst28Value * 0.28;
+    
+    final totalGSTTax = gst5Tax + gst12Tax + gst18Tax + gst28Tax;
+    final gstAfterITC = totalGSTTax - itcAmount;
+    
+    await _firestore.collection('gstData').doc(currentUserId).set({
+      'userId': currentUserId,
+      'gst0Quantity': gst0Quantity,
+      'gst0Price': gst0Price,
+      'gst0HSN': gst0HSN,
+      'gst0Value': gst0Value,
+      'gst5Quantity': gst5Quantity,
+      'gst5Price': gst5Price,
+      'gst5HSN': gst5HSN,
+      'gst5Value': gst5Value,
+      'gst5Tax': gst5Tax,
+      'gst12Quantity': gst12Quantity,
+      'gst12Price': gst12Price,
+      'gst12HSN': gst12HSN,
+      'gst12Value': gst12Value,
+      'gst12Tax': gst12Tax,
+      'gst18Quantity': gst18Quantity,
+      'gst18Price': gst18Price,
+      'gst18HSN': gst18HSN,
+      'gst18Value': gst18Value,
+      'gst18Tax': gst18Tax,
+      'gst28Quantity': gst28Quantity,
+      'gst28Price': gst28Price,
+      'gst28HSN': gst28HSN,
+      'gst28Value': gst28Value,
+      'gst28Tax': gst28Tax,
+      'totalGSTValue': gst0Value + gst5Value + gst12Value + gst18Value + gst28Value,
+      'totalGSTTax': totalGSTTax,
+      'itcAmount': itcAmount,
+      'gstAfterITC': gstAfterITC,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  /// Get GST data
+  Future<Map<String, dynamic>?> getGST() async {
+    if (currentUserId == null) return null;
+    
+    final doc = await _firestore.collection('gstData').doc(currentUserId).get();
+    return doc.data();
   }
 
   // ==================== AUTH HELPER ====================
