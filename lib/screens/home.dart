@@ -15,9 +15,9 @@ class _HomeScreenState extends State<HomeScreen>
   final List<Map<String, dynamic>> features = const [
     {"title": "Income", "route": "/income", "icon": Icons.attach_money},
     {"title": "Deductions", "route": "/deductions", "icon": Icons.receipt_long},
-    {"title": "Regime Compare", "route": "/regime_compare", "icon": Icons.compare_arrows},
-    {"title": "GST Calculator", "route": "/gst", "icon": Icons.calculate},
     {"title": "Capital Gains", "route": "/capital_gains", "icon": Icons.trending_up},
+    {"title": "GST Calculator", "route": "/gst_calculator", "icon": Icons.calculate},
+    {"title": "Regime Compare", "route": "/regime_compare", "icon": Icons.compare_arrows},
     {"title": "AI Advisor", "route": "/ai_advice", "icon": Icons.smart_toy},
     {"title": "Summary", "route": "/summary", "icon": Icons.summarize},
   ];
