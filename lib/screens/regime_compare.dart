@@ -312,13 +312,13 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
           ),
           const Spacer(),
           ElevatedButton(
-            onPressed: () => Navigator.pushNamed(context, '/gst'),
+            onPressed: () => Navigator.pushNamed(context, '/summary'),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12),
-              backgroundColor: Colors.indigo,
+              backgroundColor: Colors.deepPurple,
               foregroundColor: Colors.white,
             ),
-            child: const SizedBox(width: double.infinity, child: Center(child: Text("Next"))),
+            child: const SizedBox(width: double.infinity, child: Center(child: Text("View Summary & Recommendations"))),
           ),
         ]),
       ),

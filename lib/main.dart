@@ -12,6 +12,7 @@ import 'screens/gst_calculator.dart';
 import 'screens/capital_gains.dart';
 import 'screens/ai_advice.dart';
 import 'screens/summary.dart';
+import 'screens/recommendations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -62,8 +63,9 @@ class TaxApp extends StatelessWidget {
         '/capital_gains': (_) => const CapitalGainsScreen(),
         '/gst_calculator': (_) => const GSTCalculator(),
         '/regime_compare': (_) => const RegimeCompareScreen(),
-        '/ai_advice': (_) => const AiAdviceScreen(),
         '/summary': (_) => const SummaryScreen(),
+        '/recommendations': (_) => const RecommendationsScreen(),
+        '/ai_advice': (_) => const AiAdviceScreen(),
       },
     );
   }
