@@ -16,6 +16,8 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
   double _newRegimeTax = 0;
   double _totalIncome = 0;
   double _totalDeductions = 0;
+  double _totalCapitalGains = 0;
+  double _ltcgTax = 0;
 
   @override
   void initState() {
@@ -39,15 +41,30 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
           ((deductionsData?['section80ccd'] ?? 0.0) as num? ?? 0.0).toDouble() +
           ((deductionsData?['section24'] ?? 0.0) as num? ?? 0.0).toDouble();
 
+      // Fetch capital gains data
+      final cgData = await _firebaseService.getCapitalGains();
+      double stcgTotal = ((cgData?['totalSTCG'] ?? 0.0) as num? ?? 0.0).toDouble();
+      double ltcgRealEstate = ((cgData?['ltcgRealEstate'] ?? 0.0) as num? ?? 0.0).toDouble();
+      double ltcgStocks = ((cgData?['ltcgStocks'] ?? 0.0) as num? ?? 0.0).toDouble();
+      double ltcgMutualFunds = ((cgData?['ltcgMutualFunds'] ?? 0.0) as num? ?? 0.0).toDouble();
+      double ltcgOther = ((cgData?['ltcgOther'] ?? 0.0) as num? ?? 0.0).toDouble();
+
+      // Total income = Regular income + STCG (added to income) 
+      // LTCG is taxed separately
+      double totalIncome = income + stcgTotal;
+      double ltcgTax = _calculateLTCGTax(ltcgRealEstate, ltcgStocks, ltcgMutualFunds, ltcgOther);
+
       // Calculate taxes (pass deductions to old regime calculation)
-      final oldRegimeTax = _calculateOldRegimeTax(income, deductions);
-      final newRegimeTax = _calculateNewRegimeTax(income);
+      final oldRegimeTax = _calculateOldRegimeTax(totalIncome, deductions);
+      final newRegimeTax = _calculateNewRegimeTax(totalIncome);
 
       setState(() {
-        _totalIncome = income;
+        _totalIncome = totalIncome;
         _totalDeductions = deductions;
-        _oldRegimeTax = oldRegimeTax;
-        _newRegimeTax = newRegimeTax;
+        _totalCapitalGains = stcgTotal + ltcgRealEstate + ltcgStocks + ltcgMutualFunds + ltcgOther;
+        _ltcgTax = ltcgTax;
+        _oldRegimeTax = oldRegimeTax + ltcgTax; // Add LTCG tax to total
+        _newRegimeTax = newRegimeTax + ltcgTax; // Add LTCG tax to total
         _loading = false;
       });
     } catch (e) {
@@ -56,6 +73,48 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
         _loading = false;
       });
     }
+  }
+
+  double _calculateLTCGTax(double ltcgRealEstate, double ltcgStocks, double ltcgMutualFunds, double ltcgOther) {
+    double ltcgTax = 0;
+    
+    // Real Estate LTCG: 20% + Surcharge (progressive) + 4% Cess
+    if (ltcgRealEstate > 0) {
+      double tax = ltcgRealEstate * 0.20;
+      double surcharge = 0;
+      if ((_totalIncome + ltcgRealEstate) > 5000000) surcharge = tax * 0.25;
+      else if ((_totalIncome + ltcgRealEstate) > 1000000) surcharge = tax * 0.15;
+      else if ((_totalIncome + ltcgRealEstate) > 500000) surcharge = tax * 0.10;
+      double cess = (tax + surcharge) * 0.04;
+      ltcgTax += tax + surcharge + cess;
+    }
+    
+    // Stocks LTCG: 0% (no tax!)
+    // ltcgStocks are exempt from tax
+    
+    // Mutual Funds LTCG: 15% + Surcharge + 4% Cess
+    if (ltcgMutualFunds > 0) {
+      double tax = ltcgMutualFunds * 0.15;
+      double surcharge = 0;
+      if ((_totalIncome + ltcgMutualFunds) > 5000000) surcharge = tax * 0.25;
+      else if ((_totalIncome + ltcgMutualFunds) > 1000000) surcharge = tax * 0.15;
+      else if ((_totalIncome + ltcgMutualFunds) > 500000) surcharge = tax * 0.10;
+      double cess = (tax + surcharge) * 0.04;
+      ltcgTax += tax + surcharge + cess;
+    }
+    
+    // Other LTCG: 20% + Surcharge + 4% Cess
+    if (ltcgOther > 0) {
+      double tax = ltcgOther * 0.20;
+      double surcharge = 0;
+      if ((_totalIncome + ltcgOther) > 5000000) surcharge = tax * 0.25;
+      else if ((_totalIncome + ltcgOther) > 1000000) surcharge = tax * 0.15;
+      else if ((_totalIncome + ltcgOther) > 500000) surcharge = tax * 0.10;
+      double cess = (tax + surcharge) * 0.04;
+      ltcgTax += tax + surcharge + cess;
+    }
+    
+    return ltcgTax;
   }
 
   double _calculateOldRegimeTax(double income, double deductions) {
@@ -164,19 +223,43 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
       );
     }
 
-    double savings = (_oldRegimeTax - _newRegimeTax).abs();
-    String recommendation = _oldRegimeTax > _newRegimeTax
-        ? '✔ New Regime saves you ${_formatCurrency(savings)}'
-        : '✔ Old Regime saves you ${_formatCurrency(savings)}';
-
     return Scaffold(
-      appBar: AppBar(title: const Text("Regime Comparison", style: TextStyle(color: Colors.white, fontSize: 27))),
+      appBar: AppBar(
+        title: const Text("Regime Comparison", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.indigo,
+        elevation: 0,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(children: [
-          Text("Total Income: ${_formatCurrency(_totalIncome)}", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-          Text("Total Deductions: ${_formatCurrency(_totalDeductions)}", style: const TextStyle(fontSize: 14, color: Colors.grey)),
+          // Income breakdown
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.blue.shade300),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("📊 Income Breakdown", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.blue)),
+                const SizedBox(height: 8),
+                Text("Regular Income: ${_formatCurrency(_totalIncome - _totalCapitalGains + ((_ltcgTax > 0 || _totalCapitalGains > 0) ? 0 : 0))}", 
+                    style: const TextStyle(fontSize: 13)),
+                if (_totalCapitalGains > 0)
+                  Text("Capital Gains: ${_formatCurrency(_totalCapitalGains)}", 
+                      style: const TextStyle(fontSize: 13, color: Colors.orange)),
+                Text("Total Income: ${_formatCurrency(_totalIncome)}", 
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                Text("Deductions: ${_formatCurrency(_totalDeductions)}", 
+                    style: const TextStyle(fontSize: 13, color: Colors.grey)),
+              ],
+            ),
+          ),
           const SizedBox(height: 16),
+
+          // Tax comparison
           Row(children: [
             Expanded(
               child: _regimeCard(
@@ -187,6 +270,7 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
                   "Deductions allowed",
                   "Standard: ₹50,000",
                   "Sections 80C, 80D, 24",
+                  if (_ltcgTax > 0) "LTCG: ${_formatCurrency(_ltcgTax)}",
                 ],
               ),
             ),
@@ -200,15 +284,23 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
                   "Lower tax slabs",
                   "Standard: ₹50,000",
                   "Limited deductions",
+                  if (_ltcgTax > 0) "LTCG: ${_formatCurrency(_ltcgTax)}",
                 ],
               ),
             ),
           ]),
           const SizedBox(height: 16),
+
+          // Recommendation
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(color: Colors.yellow.shade100, borderRadius: BorderRadius.circular(12)),
-            child: Text(recommendation, style: const TextStyle(fontWeight: FontWeight.bold)),
+            child: Text(
+              _oldRegimeTax > _newRegimeTax
+                  ? '✔ New Regime saves you ${_formatCurrency((_oldRegimeTax - _newRegimeTax).abs())}'
+                  : '✔ Old Regime saves you ${_formatCurrency((_oldRegimeTax - _newRegimeTax).abs())}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
           const Spacer(),
           ElevatedButton(

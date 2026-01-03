@@ -125,49 +125,45 @@ class FirebaseService {
 
   // ==================== CAPITAL GAINS COLLECTION ====================
   
-  /// Save capital gains calculation
+  /// Save capital gains data
   Future<void> saveCapitalGains({
-    required double buyPrice,
-    required double sellPrice,
-    required int holdingPeriodMonths,
-    required double tax,
-    required String type, // 'LTCG' or 'STCG'
+    required double stcgRealEstate,
+    required double stcgStocks,
+    required double stcgMutualFunds,
+    required double stcgOther,
+    required double ltcgRealEstate,
+    required double ltcgStocks,
+    required double ltcgMutualFunds,
+    required double ltcgOther,
   }) async {
     if (currentUserId == null) throw Exception('User not logged in');
     
-    // Add to subcollection to maintain history
-    await _firestore
-        .collection('capitalGains')
-        .doc(currentUserId)
-        .collection('transactions')
-        .add({
-      'buyPrice': buyPrice,
-      'sellPrice': sellPrice,
-      'holdingPeriodMonths': holdingPeriodMonths,
-      'gain': sellPrice - buyPrice,
-      'tax': tax,
-      'type': type,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+    // Calculate totals
+    double totalSTCG = stcgRealEstate + stcgStocks + stcgMutualFunds + stcgOther;
+    double totalLTCG = ltcgRealEstate + ltcgStocks + ltcgMutualFunds + ltcgOther;
+    
+    await _firestore.collection('capitalGains').doc(currentUserId).set({
+      'userId': currentUserId,
+      'stcgRealEstate': stcgRealEstate,
+      'stcgStocks': stcgStocks,
+      'stcgMutualFunds': stcgMutualFunds,
+      'stcgOther': stcgOther,
+      'totalSTCG': totalSTCG,
+      'ltcgRealEstate': ltcgRealEstate,
+      'ltcgStocks': ltcgStocks,
+      'ltcgMutualFunds': ltcgMutualFunds,
+      'ltcgOther': ltcgOther,
+      'totalLTCG': totalLTCG,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
-  /// Get capital gains history
-  Future<List<Map<String, dynamic>>> getCapitalGainsHistory() async {
-    if (currentUserId == null) return [];
+  /// Get capital gains data
+  Future<Map<String, dynamic>?> getCapitalGains() async {
+    if (currentUserId == null) return null;
     
-    final querySnapshot = await _firestore
-        .collection('capitalGains')
-        .doc(currentUserId)
-        .collection('transactions')
-        .orderBy('createdAt', descending: true)
-        .limit(20)
-        .get();
-    
-    return querySnapshot.docs.map((doc) {
-      final data = doc.data();
-      data['id'] = doc.id;
-      return data;
-    }).toList();
+    final doc = await _firestore.collection('capitalGains').doc(currentUserId).get();
+    return doc.data();
   }
 
   // ==================== GST CALCULATIONS COLLECTION ====================

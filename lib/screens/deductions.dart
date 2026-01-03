@@ -68,9 +68,9 @@ class _DeductionsScreenState extends State<DeductionsScreen> {
         section24: d24,
       );
 
-      // Navigate to regime comparison
+      // Navigate to capital gains
       if (mounted) {
-        Navigator.pushNamed(context, '/regime_compare');
+        Navigator.pushNamed(context, '/capital_gains');
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
