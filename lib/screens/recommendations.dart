@@ -32,7 +32,6 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
       double salary = ((incomeData?['salary'] ?? 0.0) as num? ?? 0.0).toDouble();
       double section80c = ((deductionsData?['section80c'] ?? 0.0) as num? ?? 0.0).toDouble();
       double section80d = ((deductionsData?['section80d'] ?? 0.0) as num? ?? 0.0).toDouble();
-      double section24 = ((deductionsData?['section24'] ?? 0.0) as num? ?? 0.0).toDouble();
       
       double stcgTotal = ((cgData?['totalSTCG'] ?? 0.0) as num? ?? 0.0).toDouble();
       double ltcgStocks = ((cgData?['ltcgStocks'] ?? 0.0) as num? ?? 0.0).toDouble();
@@ -71,7 +70,6 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
 
       // Recommendation 3: STCG Timing
       if (stcgTotal > 0) {
-        double estimatedSTCGTax = stcgTotal * 0.30; // Estimated at 30% bracket
         recommendations.add({
           'priority': 'MEDIUM',
           'title': 'Optimize Short-term Capital Gains',

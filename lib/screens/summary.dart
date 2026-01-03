@@ -16,7 +16,6 @@ class _SummaryScreenState extends State<SummaryScreen> {
   
   double _totalIncome = 0;
   double _totalDeductions = 0;
-  double _totalCapitalGains = 0;
   double _stcgTotal = 0;
   double _ltcgTax = 0;
   double _totalGSTTax = 0;
@@ -81,7 +80,6 @@ class _SummaryScreenState extends State<SummaryScreen> {
       setState(() {
         _totalIncome = income;
         _totalDeductions = deductions;
-        _totalCapitalGains = stcgTotal + ltcgRealEstate + ltcgStocks + ltcgMutualFunds + ltcgOther;
         _stcgTotal = stcgTotal;
         _ltcgTax = ltcgTax;
         _totalGSTTax = gstTax;
