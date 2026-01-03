@@ -39,9 +39,9 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
           ((deductionsData?['section80ccd'] ?? 0.0) as num? ?? 0.0).toDouble() +
           ((deductionsData?['section24'] ?? 0.0) as num? ?? 0.0).toDouble();
 
-      // Calculate taxes
-      final oldRegimeTax = _calculateOldRegimeTax(income);
-      final newRegimeTax = _calculateNewRegimeTax(income, deductions);
+      // Calculate taxes (pass deductions to old regime calculation)
+      final oldRegimeTax = _calculateOldRegimeTax(income, deductions);
+      final newRegimeTax = _calculateNewRegimeTax(income);
 
       setState(() {
         _totalIncome = income;
@@ -58,12 +58,10 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
     }
   }
 
-  double _calculateOldRegimeTax(double income) {
-    // Old Regime: Apply all deductions first
-    double totalDeductions = _totalDeductions;
-    
+  double _calculateOldRegimeTax(double income, double deductions) {
+    // Old Regime: Apply all deductions
     // Taxable income after standard deduction (₹50,000) and other deductions
-    double taxableIncome = (income - 50000 - totalDeductions).clamp(0, double.infinity);
+    double taxableIncome = (income - 50000 - deductions).clamp(0, double.infinity);
     
     double tax = 0;
     
@@ -94,8 +92,8 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
     return tax + surcharge + cess;
   }
 
-  double _calculateNewRegimeTax(double income, double deductions) {
-    // New Regime: NO deductions allowed (ignoring deductions parameter)
+  double _calculateNewRegimeTax(double income) {
+    // New Regime: NO deductions allowed
     // Standard deduction: ₹0 for FY 2024-25 (removed)
     double taxableIncome = income.clamp(0, double.infinity);
     
