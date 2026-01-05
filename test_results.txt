@@ -1,1 +1,0 @@
-/Users/tanishullas/.pyenv/versions/3.10.12/bin/python: can't open file '/Users/tanishullas/Desktop/finora/test_large_suite.py': [Errno 2] No such file or directory
