@@ -20,6 +20,7 @@ class _HomeScreenState extends State<HomeScreen>
     {"title": "Regime Compare", "route": "/regime_compare", "icon": Icons.compare_arrows},
     {"title": "AI Advisor", "route": "/ai_advice", "icon": Icons.smart_toy},
     {"title": "Summary", "route": "/summary", "icon": Icons.summarize},
+    {"title": "Recommendations", "route": "/recommendations", "icon": Icons.lightbulb},
   ];
 
   @override
