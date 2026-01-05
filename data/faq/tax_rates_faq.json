@@ -1,0 +1,98 @@
+{
+  "capital_gains_tax_rates": {
+    "question": "What are the capital gains tax rates in India?",
+    "answer": "Capital gains tax rates in India vary based on the holding period and asset type. Short-term capital gains (STCG) on listed equity shares under Section 111A are taxed at 20% (15% before 23-07-2024). Other short-term capital gains (assets held \u226412 months, or \u226424 months for property) are taxed at your applicable income tax slab rates. Long-term capital gains (LTCG) on assets held >12 months (>24 months for property) are generally taxed at 12.5% (20% before 23-07-2024). However, LTCG on listed equity shares under Section 112A enjoys special treatment: 12.5% tax with an exemption on gains up to Rs 1,25,000 per financial year. Bonds and debentures held long-term are taxed at 20% without indexation benefit. Agricultural land and unlisted equity have different treatment. To minimize tax, maintain detailed records of acquisition date and cost to establish holding period."
+  },
+  "stcg_rate": {
+    "question": "What is the short term capital gains tax rate?",
+    "answer": "Short-term capital gains (STCG) on listed equity shares with Securities Transaction Tax under Section 111A are taxed at a flat rate of 20% (reduced from 15% before 23-07-2024). This applies to shares of domestic companies traded on recognized stock exchanges with STT paid. For other short-term capital assets (bonds, mutual funds without STT, real property held <24 months, commodity futures), STCG is added to your total income and taxed at your applicable income tax slab rates, which could be anywhere from 5% to 30% depending on your income bracket. The advantage of equity STCG is that the flat 20% rate is often lower than the marginal tax rate for high-earning individuals. Always maintain proper records of buy/sell dates and cost basis to prove the holding period and claim the lower rates where applicable."
+  },
+  "ltcg_rate": {
+    "question": "What is the long term capital gains tax rate?",
+    "answer": "Long-term capital gains (LTCG) on listed equity shares under Section 112A are taxed at a flat rate of 12.5% (20% before 23-07-2024) with an exemption limit of Rs 1,25,000 per financial year. This means gains up to Rs 1,25,000 are completely tax-free, and only gains above this threshold are taxed at 12.5%. For LTCG on other assets like bonds, mutual funds, and unlisted shares, the flat rate is 12.5% without any exemption limit. For long-term real property held >24 months, you can claim indexation benefit where cost is adjusted for inflation, often resulting in significantly lower taxable gains. For other long-term assets like government securities, LTCG is taxed at 12.5%. This preferential treatment of LTCG encourages long-term investing and wealth creation. Consult tax advisor to optimize your holdings based on personal circumstances."
+  },
+  "section_80c": {
+    "question": "What is Section 80C?",
+    "answer": "Section 80C allows deductions up to Rs 1,50,000 per financial year for qualifying investments and expenses. Eligible items include: Life insurance premiums, Public Provident Fund (PPF) contributions, Employees' Provident Fund (EPF), National Savings Certificate (NSC), ELSS (Equity Linked Savings Scheme) mutual funds, tuition fees for 2 children's education, principal repayment on home loan, Sukanya Samriddhi Account deposits, National Pension System (NPS) Tier-I contributions, and 5-year tax-saving fixed deposits in banks. The Rs 1,50,000 limit applies across Section 80C, 80CCC, and 80CCD(1) combined. You need to maintain supporting documents like insurance receipts, investment certificates, and education fee receipts for claiming this deduction in your ITR filing."
+  },
+  "gst_rates_restaurants": {
+    "question": "What is the GST rate for restaurants?",
+    "answer": "GST rates for restaurants depend on the type of service and whether GST is charged with or without ITC (Input Tax Credit). Regular restaurants serving food only (no alcohol) at normal food joints are taxed at 5% without ITC eligibility. Restaurants in hotels with room tariff of Rs 7,500 or more per night are taxed at 18% with full ITC. Bars and restaurants serving alcohol are taxed at 18% with ITC eligibility. Outdoor catering for events is also at 18% with ITC. Cloud kitchens and meal delivery services follow the same rates. Home delivery of meals (below Rs 5,000/order) is at 5% without ITC. The key distinction is the venue and nature of service\u2014standalone restaurants generally face 5% while premium hotel restaurants and alcohol service attracts 18%. Input Tax Credit (ITC) allows businesses to reduce their tax liability by claiming credit for GST paid on purchases of ingredients and services."
+  },
+  "standard_deduction": {
+    "question": "What is the standard deduction for salaried employees?",
+    "answer": "Standard deduction for salaried employees is Rs 75,000 per financial year (increased from Rs 50,000 in AY 2023-24). This deduction is automatic and available to all salaried employees in both the old tax regime and new optional tax regime. It's claimed directly from the gross salary income, so no receipts or documentation is required. Employees cannot claim both standard deduction and actual expenses for travel, conveyance, or other salary-related costs. This deduction is one of the biggest benefits for salaried employees as it reduces taxable income without any compliance burden. It applies equally to all salary earners regardless of income level, and the amount was enhanced to provide greater tax relief to the working population."
+  },
+  "section_24": {
+    "question": "What is Section 24 deduction?",
+    "answer": "Section 24 allows deduction of interest paid on home loan. For self-occupied property, you can deduct up to Rs 2,00,000 per financial year from your taxable income. For let-out property (rental property), there is no upper limit on interest deduction\u2014you can deduct the full interest amount paid. Interest paid during the pre-construction period is allowed as deduction but is spread over 5 equal installments starting from the year of completion. You need to provide proof of interest paid through bank statement or home loan statement showing the break-up of principal and interest. This deduction is available only if you have a valid home loan from a bank or financial institution. Principal repayment cannot be deducted under Section 24 but can be claimed under Section 80C if applicable."
+  },
+  "gst_definition": {
+    "question": "What is GST?",
+    "answer": "Goods and Services Tax (GST) is a comprehensive, destination-based, multi-stage indirect tax on the supply of goods and services in India. Implemented in July 2017, GST replaced multiple taxes like VAT, excise duty, service tax, and others, providing a unified tax system. GST has three components: CGST (Central Goods and Services Tax) collected by central government, SGST (State Goods and Services Tax) collected by state government, and IGST (Integrated GST) applied on inter-state and international transactions. GST rates range from 0% (essential items), 5%, 12%, 18%, to 28% (luxury items) depending on commodity classification. A key feature is Input Tax Credit (ITC) where GST paid on purchases can be offset against GST collected on sales, preventing tax cascading. GST simplified India's tax structure, increased transparency, and improved compliance through online filing requirements."
+  },
+  "input_tax_credit": {
+    "question": "What is input tax credit?",
+    "answer": "Input Tax Credit (ITC) under GST allows businesses to reduce their GST tax liability by claiming credit for GST paid on business purchases and inputs. This is a crucial feature of GST that eliminates tax cascading. For example, if you're a manufacturer who buys raw materials paying 18% GST and sells finished products also at 18% GST, you can set off the GST paid on purchases against GST collected on sales. You only remit the net GST (output GST minus input GST) to the government. ITC is available on goods and services used in the course of business activities like purchase of inventory, machinery, packaging materials, fuel, electricity, and professional services. However, ITC is blocked on certain items like personal consumption goods, vehicles for personal use, and services like accommodation, food, and passenger transport unless used for business. Proper GST invoices from registered suppliers are mandatory to claim ITC. Businesses must maintain detailed records and file GST returns to claim available credits."
+  },
+  "stcg_vs_ltcg": {
+    "question": "What is the difference between STCG and LTCG?",
+    "answer": "Short-term capital gains (STCG) are profits from assets held for 12 months or less (24 months for real property). These are taxed at 20% for listed equity shares under Section 111A (15% before 23-07-2024). For other assets, STCG is added to income and taxed at your applicable slab rate. Long-term capital gains (LTCG) are profits from assets held for more than 12 months (more than 24 months for real property). LTCG on listed equity is taxed at a flat 12.5% under Section 112A with exemption on gains up to Rs 1,25,000. This means if you have Rs 2,00,000 LTCG from equity, only Rs 75,000 is taxable at 12.5%. LTCG on other assets is taxed at 12.5% (bonds) or 20% with indexation benefit (property). To minimize taxes, consider holding investments for the long term to access lower LTCG rates. Property transactions especially benefit from indexation, reducing effective tax burden significantly."
+  },
+  "surcharge": {
+    "question": "What is surcharge in income tax?",
+    "answer": "Surcharge is an additional tax levied on high-income individuals in India, calculated as a percentage of income tax liability. The rates are: 10% surcharge if taxable income is Rs 50 lakhs to Rs 1 crore (applies 10% on income tax amount), 15% surcharge if income is Rs 1 crore to Rs 2 crore, 25% surcharge if income is Rs 2 crore to Rs 5 crore, and 37% surcharge if income exceeds Rs 5 crore. Surcharge is calculated on the total income tax, not on income itself. After surcharge is calculated, Health and Education Cess of 4% is applied on the total (income tax + surcharge). For example, if your income tax is Rs 20,00,000 (income >Rs 5 crore), surcharge at 37% would be Rs 7,40,000, making total tax Rs 27,40,000 before cess. Individuals with very high incomes significantly bear higher tax burden through surcharge mechanisms. Small businesses and employees with income below Rs 50 lakhs need not worry about surcharge."
+  },
+  "cess": {
+    "question": "What is cess in income tax?",
+    "answer": "Health and Education Cess is a 4% levy charged on the total income tax plus surcharge (if applicable) in India. It was introduced to fund healthcare and education initiatives across the country. Cess is applicable to all taxpayers regardless of their income level\u2014even if you are in the lowest tax bracket, 4% cess is applied on your income tax amount. For example, if your income tax liability is Rs 50,000 and surcharge is Rs 10,000, total becomes Rs 60,000, and cess of 4% on Rs 60,000 is Rs 2,400. This additional Rs 2,400 is collected as cess. Unlike surcharge which applies only to high earners, cess is universal. The cess revenue is dedicated to health and education sectors per government policy. When calculating your total tax liability, always include cess in your estimates. Many salaried employees overlook cess, assuming it's only for high earners. It applies to all, making it a critical component of final tax calculation."
+  },
+  "section_111a": {
+    "question": "What is Section 111A?",
+    "answer": "Section 111A provides concessional taxation for short-term capital gains on listed equity shares and equity-oriented mutual funds traded on recognized stock exchanges with STT paid. STCG are taxed at a flat 20% (15% before 23-07-2024) instead of slab rates, which could be much higher for high earners. Both purchase and sale must occur on recognized exchanges with STT paid. This encourages short-term equity investment with tax relief. For lower-bracket taxpayers (5-10%), the flat 20% might be higher than their marginal rate, so benefits mainly mid-to-high earners."
+  },
+  "section_112a": {
+    "question": "What is Section 112A?",
+    "answer": "Section 112A provides preferential treatment for long-term capital gains from listed equity shares traded with STT paid. LTCG are taxed at a flat 12.5% (10% before 23-07-2024) with a major benefit: gains up to Rs 1,25,000 per year are completely tax-free. If you have Rs 2,00,000 LTCG, only Rs 75,000 is taxable at 12.5%. Shares must be held >12 months, and both transactions must be on recognized exchanges with STT. This section significantly reduces tax burden for long-term equity investors and encourages wealth creation through equity markets."
+  },
+  "income_tax_slabs": {
+    "question": "What are income tax slabs?",
+    "answer": "New Tax Regime (2025-26): Rs 0-3 lakhs: Nil, Rs 3-7 lakhs: 5%, Rs 7-10 lakhs: 10%, Rs 10-12 lakhs: 15%, Rs 12-15 lakhs: 20%, Above Rs 15 lakhs: 30%. Old Tax Regime: Rs 0-2.5 lakhs: Nil, Rs 2.5-5 lakhs: 5%, Rs 5-10 lakhs: 20%, Above Rs 10 lakhs: 30%. Standard deduction of Rs 50,000 available in both regimes."
+  },
+  "tax_rate_above_10_lakhs": {
+    "question": "What is the tax rate for income above 10 lakhs?",
+    "answer": "For income above Rs 10 lakhs, tax rate depends on regime. OLD REGIME: 30% on income >Rs 10L (highest slab). NEW REGIME: Rs 10-12L at 15%, Rs 12-15L at 20%, >Rs 15L at 30%. Additionally, surcharge applies: 10% if Rs 50L-1Cr, 15% (Rs 1-2Cr), 25% (Rs 2-5Cr), 37% (>Rs 5Cr). Health & Education Cess at 4% applies to all. The new regime offers lower taxes for most due to lower slab rates. Always compare both regimes based on your income and deductions to minimize tax liability."
+  },
+  "section_80e": {
+    "question": "What is Section 80E?",
+    "answer": "Section 80E allows deduction of interest paid on education loan taken for higher education. The key features are: (1) Deduction is available for interest paid only, not for principal amount, (2) There is no upper limit on the interest amount that can be deducted, (3) The deduction is available for a maximum of 8 consecutive assessment years from the year interest payments begin, (4) The loan must be taken from a bank or financial institution for higher education (UG, PG, professional courses) of the assessee, spouse, or dependent children, (5) Education must be for full-time study in India or abroad at an approved educational institution, (6) The deduction begins from the year in which interest payments commence and continues for 8 years even if loan is repaid earlier. You need education loan statement and proof of enrollment in eligible institution."
+  },
+  "presumptive_taxation": {
+    "question": "What is presumptive taxation?",
+    "answer": "Presumptive taxation is a simplified tax scheme under Sections 44AD, 44ADA, and 44AE for small businesses and professionals. It allows taxpayers to declare income at a presumed rate (6-8% of turnover for business, 50% for professionals) without maintaining detailed books of accounts. Eligible for businesses with turnover up to Rs 2 crore and professionals with receipts up to Rs 50 lakhs."
+  },
+  "who_can_opt_presumptive": {
+    "question": "Who can opt for presumptive taxation?",
+    "answer": "Individuals, HUFs, and partnership firms (not LLPs) can opt for presumptive taxation. Section 44AD: Businesses with turnover up to Rs 2 crore (except transport business). Section 44ADA: Professionals (doctors, lawyers, engineers, architects, etc.) with gross receipts up to Rs 50 lakhs. Section 44AE: Transport business with up to 10 goods carriages."
+  },
+  "gst_rates": {
+    "question": "What are GST rates?",
+    "answer": "GST has four main rate slabs: 5% (essential items like food grains, healthcare), 12% (processed food, computers), 18% (most goods and services, capital goods, IT services), and 28% (luxury items, tobacco, automobiles). Some items are exempt (0%), and certain goods attract additional cess. Specific rates vary by HSN/SAC codes."
+  },
+  "freelance_income_tax": {
+    "question": "how is freelance income taxed in India?",
+    "answer": "Freelance income in India is treated as business/professional income under Section 44AA of the Income Tax Act. Taxed at applicable income tax slab rates (5% to 30% based on total income). Can opt for Presumptive Taxation under Section 44ADA if receipts < Rs 50 lakhs (50% of receipts deemed as income). Must maintain books of accounts if receipts exceed Rs 25 lakhs. Can claim business expenses as deductions (internet, equipment, office rent, etc.). Advance tax must be paid if liability exceeds Rs 10,000. TDS applicable under Section 194J (10%) or 194C (1-2%) depending on nature of service."
+  },
+  "tax_audit_requirement": {
+    "question": "when is tax audit required?",
+    "answer": "Tax audit under Section 44AB is mandatory: Business with turnover exceeding Rs 1 crore (Rs 10 crore if cash < 5%). Profession with gross receipts exceeding Rs 50 lakhs. Presumptive taxation if profit claimed is lower than presumptive rates. Transfer pricing if international transactions exceed Rs 1 crore. Tax audit report in Form 3CA/3CB must be filed by September 30th. Penalty: Rs 1.5 lakh (or 0.5% of turnover, whichever is lower) for non-compliance."
+  },
+  "tds_rates_salary": {
+    "question": "what are the TDS rates for salary?",
+    "answer": "TDS on salary (Section 192) is deducted as per income tax slab rates. New Tax Regime: 0% up to Rs 3L, 5% (Rs 3-7L), 10% (Rs 7-10L), 15% (Rs 10-12L), 20% (Rs 12-15L), 30% (above Rs 15L). Old Tax Regime: 0% up to Rs 2.5L, 5% (Rs 2.5-5L), 20% (Rs 5-10L), 30% (above Rs 10L). Standard deduction Rs 50,000 allowed. Surcharge: 10-37% on high incomes. Health & Education Cess: 4% on tax plus surcharge."
+  },
+  "itr_filing_deadline": {
+    "question": "what is the deadline for filing income tax return?",
+    "answer": "ITR filing deadlines for FY 2024-25: Individual/HUF (non-audit) by July 31, 2025. Business with tax audit by October 31, 2025. Transfer pricing report by November 30, 2025. Revised return within 24 months. Belated return by December 31, 2025. Late filing fee: Rs 5,000 (Rs 1,000 if income < Rs 5 lakhs). Interest under Section 234A: 1% per month on tax due."
+  }
+}
