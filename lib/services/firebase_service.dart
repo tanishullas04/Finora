@@ -34,7 +34,8 @@ class FirebaseService {
   
   /// Save income data
   Future<void> saveIncome({
-    required double salary,
+    required double taxableSalary,
+    required double grossSalary,
     required double otherIncome,
     required double rentalIncome,
     required double businessIncome,
@@ -43,11 +44,12 @@ class FirebaseService {
     
     await _firestore.collection('income').doc(currentUserId).set({
       'userId': currentUserId,
-      'salary': salary,
+      'taxableSalary': taxableSalary,
+      'grossSalary': grossSalary,
       'otherIncome': otherIncome,
       'rentalIncome': rentalIncome,
       'businessIncome': businessIncome,
-      'totalIncome': salary + otherIncome + rentalIncome + businessIncome,
+      'totalIncome': taxableSalary + otherIncome + rentalIncome + businessIncome,
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true)); // merge: true updates existing data
   }
