@@ -31,8 +31,81 @@
 
   <title>finora</title>
   <link rel="manifest" href="manifest.json">
+  
+  <!-- Tesseract.js for OCR -->
+  <script async src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
 </head>
 <body>
+  <script>
+    // Initialize Tesseract.js
+    const { Tesseract } = window;
+    let ocrWorker = null;
+    let ocrInitialized = false;
+    let initPromise = null;
+
+    function initializeTesseract() {
+      if (ocrInitialized) return Promise.resolve();
+      if (initPromise) return initPromise;
+      
+      initPromise = (async () => {
+        try {
+          console.log('Initializing Tesseract.js...');
+          ocrWorker = await Tesseract.createWorker('eng');
+          ocrInitialized = true;
+          console.log('Tesseract.js initialized successfully');
+        } catch (e) {
+          console.error('Failed to initialize Tesseract.js:', e);
+          throw e;
+        }
+      })();
+      
+      return initPromise;
+    }
+
+    async function extractTextFromImage(dataUrl) {
+      try {
+        console.log('Starting OCR extraction from image...');
+        
+        // Initialize if not done
+        await initializeTesseract();
+        
+        if (!ocrWorker) {
+          throw new Error('Tesseract worker not initialized');
+        }
+        
+        console.log('Processing image with Tesseract.js...');
+        const result = await ocrWorker.recognize(dataUrl);
+        const text = result.data.text;
+        
+        console.log('OCR extraction complete. Text length:', text.length);
+        console.log('Extracted text preview:', text.substring(0, 500));
+        
+        return text;
+      } catch (e) {
+        console.error('OCR extraction error:', e);
+        throw e;
+      }
+    }
+
+    // Expose functions to Dart - create a wrapper that handles promises
+    window.extractTextFromImageSync = function(dataUrl) {
+      // Store the promise and return a placeholder
+      // The actual result will be set when promise resolves
+      const promise = extractTextFromImage(dataUrl);
+      return promise;
+    };
+  </script>
+
+  <script src='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/build/pdf.min.mjs' type='module'></script>
+  <script type='module'>
+  var { pdfjsLib } = globalThis;
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/build/pdf.worker.mjs';
+
+  var pdfRenderOptions = {
+    cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/cmaps/',
+    cMapPacked: true,
+  }
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

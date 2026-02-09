@@ -63,9 +63,7 @@ class _GSTCalculatorState extends State<GSTCalculator> {
   double _basePrice = 0;
   String _sellerState = '';
   String _buyerState = '';
-  String _itemDescription = '';
   double _gstRate = 18;
-  bool _skipGST = false;
   bool _isLoading = true;
 
   // Result data
@@ -221,21 +219,7 @@ class _GSTCalculatorState extends State<GSTCalculator> {
       _basePrice = 0;
       _sellerState = '';
       _buyerState = '';
-      _itemDescription = '';
       _gstRate = 18;
-    });
-  }
-
-  void _goToStep(GSTStep step) {
-    setState(() {
-      _currentStep = step;
-      // Clear fields when entering new step
-      if (step == GSTStep.location) {
-        _buyerState = '';
-      }
-      if (step == GSTStep.itemType) {
-        _itemDescription = '';
-      }
     });
   }
 
@@ -687,9 +671,6 @@ class _GSTCalculatorState extends State<GSTCalculator> {
                                   // Clear fields when entering new step
                                   if (_currentStep == GSTStep.location) {
                                     _buyerState = '';
-                                  }
-                                  if (_currentStep == GSTStep.itemType) {
-                                    _itemDescription = '';
                                   }
                                 });
                               }

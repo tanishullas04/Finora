@@ -2,6 +2,103 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/firebase_service.dart';
 
+// Capital Gains Calculator - Separates business logic from UI
+class CapitalGainCalculator {
+  // LTCG exemption constants
+  static const double ltcgExemption = 125000; // ₹1,25,000 exemption
+  static const double ltcgMutualFundsTaxRate = 0.125; // 12.5% tax
+
+  static bool isLongTermAsset(AssetType asset, int days) {
+    switch (asset) {
+      case AssetType.property:
+        return days >= 730; // 2 years
+      case AssetType.gold:
+        return days >= 1095; // 3 years
+      case AssetType.stocks:
+      case AssetType.mutualFunds:
+        return days >= 365; // 1 year
+      default:
+        return false;
+    }
+  }
+
+  static Map<String, dynamic> calculate({
+    required AssetType asset,
+    required double purchasePrice,
+    required double sellingPrice,
+    required bool isLongTerm,
+  }) {
+    final capitalGain = sellingPrice - purchasePrice;
+    double taxRate = 0;
+    String taxSection = '';
+    double taxPayable = 0;
+    bool isCapitalLoss = capitalGain < 0;
+    double taxableAmount = capitalGain;
+    double exemptionAmount = 0;
+
+    if (isCapitalLoss) {
+      // Capital Loss
+      taxSection = 'Capital Loss (can be carried forward)';
+      taxPayable = 0;
+    } else if (isLongTerm) {
+      // Long-term capital gains
+      switch (asset) {
+        case AssetType.stocks:
+          taxRate = 0; // 0% for equity LTCG
+          taxSection = 'Section 112A';
+          taxableAmount = capitalGain;
+          break;
+        case AssetType.mutualFunds:
+          taxRate = 12.5;
+          taxSection = 'Section 112A';
+          // Apply exemption for LTCG
+          exemptionAmount = capitalGain > ltcgExemption
+              ? ltcgExemption
+              : capitalGain;
+          taxableAmount = capitalGain > ltcgExemption
+              ? capitalGain - ltcgExemption
+              : 0;
+          taxPayable = taxableAmount * ltcgMutualFundsTaxRate;
+          break;
+        case AssetType.property:
+          taxRate = 20;
+          taxSection = 'Section 112';
+          taxableAmount = capitalGain;
+          taxPayable = capitalGain * (taxRate / 100);
+          break;
+        case AssetType.gold:
+          taxRate = 20;
+          taxSection = 'Section 112';
+          taxableAmount = capitalGain;
+          taxPayable = capitalGain * (taxRate / 100);
+          break;
+        default:
+          taxRate = 20;
+          taxPayable = capitalGain * (taxRate / 100);
+      }
+      // For non-mutual fund LTCG, recalculate if not already done
+      if (asset != AssetType.mutualFunds && taxPayable == 0) {
+        taxPayable = capitalGain * (taxRate / 100);
+      }
+    } else {
+      // Short-term capital gains - taxed as regular income
+      taxRate = 0;
+      taxSection = 'Added to your total income';
+      taxPayable = 0; // Will depend on total income
+    }
+
+    return {
+      'capitalGain': capitalGain,
+      'taxRate': taxRate,
+      'taxSection': taxSection,
+      'taxPayable': taxPayable,
+      'isCapitalLoss': isCapitalLoss,
+      'taxableAmount': taxableAmount,
+      'exemptionAmount': exemptionAmount,
+    };
+  }
+}
+
 class CapitalGainsScreen extends StatefulWidget {
   const CapitalGainsScreen({super.key});
 
@@ -35,6 +132,10 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
   double _taxRate = 0;
   double _taxPayable = 0;
   String _taxSection = '';
+  bool _isCapitalLoss = false;
+  Map<String, double> _stcgSlabTaxes = {};
+  double _taxableAmount = 0;
+  double _exemptionAmount = 0;
 
   // Legacy data for backward compatibility
   final TextEditingController _stcgRealEstateController =
@@ -64,44 +165,38 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
   }
 
   void _calculateCapitalGain() {
-    _capitalGain = _sellingPrice - _purchasePrice;
+    if (_purchaseDate == null || _saleDate == null) return;
 
-    // Determine if long-term (2 years or more)
-    if (_purchaseDate != null && _saleDate != null) {
-      final difference = _saleDate!.difference(_purchaseDate!);
-      _isLongTerm = difference.inDays >= 730; // ~2 years
+    final difference = _saleDate!.difference(_purchaseDate!);
+    _isLongTerm = CapitalGainCalculator.isLongTermAsset(
+      _selectedAsset,
+      difference.inDays,
+    );
 
-      // Determine tax rate based on asset type and holding period
-      if (_isLongTerm) {
-        switch (_selectedAsset) {
-          case AssetType.stocks:
-            _taxRate = 0; // 0% for equity LTCG
-            _taxSection = 'Section 112A';
-            break;
-          case AssetType.mutualFunds:
-            _taxRate = 15;
-            _taxSection = 'Section 112A';
-            break;
-          case AssetType.property:
-            _taxRate = 20;
-            _taxSection = 'Section 112';
-            break;
-          case AssetType.gold:
-            _taxRate = 20;
-            _taxSection = 'Section 112';
-            break;
-          default:
-            _taxRate = 20;
-        }
-      } else {
-        // STCG - taxed as regular income
-        _taxRate = 0; // Will be added to regular income
-        _taxSection = 'STCG - Regular Income';
-      }
+    // Use calculator to determine tax
+    final result = CapitalGainCalculator.calculate(
+      asset: _selectedAsset,
+      purchasePrice: _purchasePrice,
+      sellingPrice: _sellingPrice,
+      isLongTerm: _isLongTerm,
+    );
+
+    _capitalGain = result['capitalGain'];
+    _taxRate = result['taxRate'];
+    _taxSection = result['taxSection'];
+    _taxPayable = result['taxPayable'];
+    _isCapitalLoss = result['isCapitalLoss'] ?? false;
+    _taxableAmount = result['taxableAmount'] ?? 0;
+    _exemptionAmount = result['exemptionAmount'] ?? 0;
+
+    // Calculate STCG slab-wise taxes
+    if (!_isLongTerm && _capitalGain > 0) {
+      _stcgSlabTaxes = {
+        '5% slab': _capitalGain * 0.05,
+        '20% slab': _capitalGain * 0.20,
+        '30% slab': _capitalGain * 0.30,
+      };
     }
-
-    // Simple tax calculation (surcharge and cess not included for simplicity)
-    _taxPayable = _capitalGain * (_taxRate / 100);
   }
 
   Future<void> _selectDate(bool isPurchaseDate) async {
@@ -358,23 +453,6 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
               _assetCard(AssetType.stocks, '📈', 'Shares / Stocks'),
               _assetCard(AssetType.mutualFunds, '💼', 'Mutual Funds'),
               _assetCard(AssetType.gold, '🪙', 'Gold / Other Assets'),
-
-              const SizedBox(height: 24),
-
-              // Skip Button
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: () => Navigator.pushReplacementNamed(
-                    context,
-                    '/regime_compare',
-                  ),
-                  child: const Text(
-                    'Skip (No capital gains)',
-                    style: TextStyle(fontSize: 14, color: Colors.indigo),
-                  ),
-                ),
-              ),
             ],
 
             // Details Form Step
@@ -384,7 +462,22 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
             if (_currentStep == FormStep.result) ...[
               _buildResultCard(),
               const SizedBox(height: 24),
-              _buildIndexationToggle(),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: const Text(
+                  'Indexation benefit removed as per Budget 2024',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
               const SizedBox(height: 28),
             ],
 
@@ -790,45 +883,129 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
               ),
               const SizedBox(height: 16),
 
-              _resultRow('Gain Amount', '₹${_capitalGain.toStringAsFixed(2)}'),
+              _resultRow(
+                'Gain Amount',
+                _isCapitalLoss
+                    ? '-₹${_capitalGain.abs().toStringAsFixed(2)}'
+                    : '₹${_capitalGain.toStringAsFixed(2)}',
+              ),
               const SizedBox(height: 12),
-              _resultRow('Tax Rate', '${_taxRate.toStringAsFixed(0)}%'),
-              const SizedBox(height: 12),
+              if (_taxRate > 0 && !_isCapitalLoss)
+                _resultRow('Tax Rate', '${_taxRate.toStringAsFixed(1)}%'),
+              if (_taxRate > 0 && !_isCapitalLoss) const SizedBox(height: 12),
               _resultRow('Tax Section', _taxSection),
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 12),
                 child: Divider(height: 1),
               ),
-              _resultRow(
-                'Tax Payable',
-                '₹${_taxPayable.toStringAsFixed(2)}',
-                isBold: true,
-              ),
+              if (_isCapitalLoss)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _resultRow('Tax Payable', 'No tax liability', isBold: true),
+                    const SizedBox(height: 8),
+                    Text(
+                      'You can carry forward this loss to offset future capital gains.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.orange.shade600,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                )
+              else if (_isLongTerm)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Show exemption details if it applies (Mutual Funds)
+                    if (_exemptionAmount > 0) ...[
+                      Text(
+                        'Long-Term Capital Gains (LTCG)',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: Colors.indigo,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _resultRow(
+                        'Total LTCG',
+                        '₹${_capitalGain.toStringAsFixed(2)}',
+                      ),
+                      const SizedBox(height: 6),
+                      _resultRow(
+                        'Exemption',
+                        '-₹${_exemptionAmount.toStringAsFixed(2)}',
+                      ),
+                      const SizedBox(height: 6),
+                      _resultRow(
+                        'Taxable LTCG',
+                        '₹${_taxableAmount.toStringAsFixed(2)}',
+                      ),
+                      const SizedBox(height: 12),
+                      _resultRow(
+                        'LTCG Tax (12.5%)',
+                        '₹${_taxPayable.toStringAsFixed(2)}',
+                        isBold: true,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '₹1,25,000 exemption as per Section 112A',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontStyle: FontStyle.italic,
+                          color: Colors.green.shade600,
+                        ),
+                      ),
+                    ] else
+                      _resultRow(
+                        'Tax Payable',
+                        '₹${_taxPayable.toStringAsFixed(2)}',
+                        isBold: true,
+                      ),
+                  ],
+                )
+              else if (_capitalGain > 0) ...[
+                const SizedBox(height: 12),
+                const Text(
+                  'Estimated Tax (based on income slab)',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.indigo,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ..._stcgSlabTaxes.entries.map(
+                  (entry) => Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: _resultRow(
+                      entry.key,
+                      '₹${entry.value.toStringAsFixed(2)}',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Final tax depends on your total annual income.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                    color: Colors.indigo.shade600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Slabs shown are indicative as per current income tax structure.',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontStyle: FontStyle.italic,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
             ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _resultRow(String label, String value, {bool isBold = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
-            color: Colors.grey.shade700,
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-            color: isBold ? Colors.indigo : Colors.grey.shade800,
           ),
         ),
       ],
@@ -915,6 +1092,30 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
           ],
         ],
       ),
+    );
+  }
+
+  Widget _resultRow(String label, String value, {bool isBold = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+            color: Colors.grey.shade700,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+            color: isBold ? Colors.indigo : Colors.grey.shade800,
+          ),
+        ),
+      ],
     );
   }
 }

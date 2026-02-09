@@ -42,9 +42,104 @@ class _DeductionsScreenState extends State<DeductionsScreen> {
 
   // Gross income for summary
   final TextEditingController grossIncomeController = TextEditingController();
+  final TextEditingController taxableSalaryController = TextEditingController();
 
   final FirebaseService _firebaseService = FirebaseService();
   bool _saving = false;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedData();
+  }
+
+  Future<void> _loadSavedData() async {
+    try {
+      print('DEBUG: Loading saved deductions data...');
+      final deductionsData = await _firebaseService.getDeductions();
+      final incomeData = await _firebaseService.getIncome();
+      
+      if (mounted) {
+        setState(() {
+          // Load gross income from income collection
+          if (incomeData != null) {
+            if (incomeData['grossSalary'] != null && incomeData['grossSalary'] > 0) {
+              grossIncomeController.text = incomeData['grossSalary'].toString();
+            }
+            if (incomeData['taxableSalary'] != null && incomeData['taxableSalary'] > 0) {
+              taxableSalaryController.text = incomeData['taxableSalary'].toString();
+            }
+          }
+
+          // Load 80C deductions
+          if (deductionsData != null) {
+            if (deductionsData['epf'] != null && deductionsData['epf'] > 0) {
+              epfController.text = deductionsData['epf'].toString();
+              epfSelected = true;
+            }
+            if (deductionsData['lifeInsurance'] != null && deductionsData['lifeInsurance'] > 0) {
+              lifeInsuranceController.text = deductionsData['lifeInsurance'].toString();
+              lifeInsuranceSelected = true;
+            }
+            if (deductionsData['elss'] != null && deductionsData['elss'] > 0) {
+              elssController.text = deductionsData['elss'].toString();
+              elssSelected = true;
+            }
+            if (deductionsData['nsc'] != null && deductionsData['nsc'] > 0) {
+              nscController.text = deductionsData['nsc'].toString();
+              nscSelected = true;
+            }
+            if (deductionsData['tuition'] != null && deductionsData['tuition'] > 0) {
+              tuitionController.text = deductionsData['tuition'].toString();
+              tuitionSelected = true;
+            }
+
+            // Load 80D deductions
+            if (deductionsData['selfFamilyPremium'] != null && deductionsData['selfFamilyPremium'] > 0) {
+              selfFamilyPremiumController.text = deductionsData['selfFamilyPremium'].toString();
+            }
+            if (deductionsData['parentsPremium'] != null && deductionsData['parentsPremium'] > 0) {
+              parentsPremiumController.text = deductionsData['parentsPremium'].toString();
+            }
+            if (deductionsData['parentsSeniorCitizen'] != null) {
+              parentsSeniorCitizen = deductionsData['parentsSeniorCitizen'] as bool;
+            }
+
+            // Load 24 deduction
+            if (deductionsData['homeLoanInterest'] != null && deductionsData['homeLoanInterest'] > 0) {
+              homeLoanInterestController.text = deductionsData['homeLoanInterest'].toString();
+            }
+            if (deductionsData['isSelfOccupied'] != null) {
+              isSelfOccupied = deductionsData['isSelfOccupied'] as bool;
+            }
+
+            // Load other deductions
+            if (deductionsData['educationLoan'] != null && deductionsData['educationLoan'] > 0) {
+              educationLoanController.text = deductionsData['educationLoan'].toString();
+            }
+            if (deductionsData['donation'] != null && deductionsData['donation'] > 0) {
+              donationController.text = deductionsData['donation'].toString();
+            }
+            if (deductionsData['npsExtra'] != null && deductionsData['npsExtra'] > 0) {
+              npsExtraController.text = deductionsData['npsExtra'].toString();
+            }
+            if (deductionsData['savingsInterest'] != null && deductionsData['savingsInterest'] > 0) {
+              savingsInterestController.text = deductionsData['savingsInterest'].toString();
+            }
+          }
+
+          _loading = false;
+        });
+        print('DEBUG: Deductions data loaded successfully');
+      } else {
+        setState(() => _loading = false);
+      }
+    } catch (e) {
+      print('DEBUG: Error loading deductions data: $e');
+      setState(() => _loading = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -61,6 +156,7 @@ class _DeductionsScreenState extends State<DeductionsScreen> {
     npsExtraController.dispose();
     savingsInterestController.dispose();
     grossIncomeController.dispose();
+    taxableSalaryController.dispose();
     super.dispose();
   }
 
@@ -110,8 +206,8 @@ class _DeductionsScreenState extends State<DeductionsScreen> {
 
   double _getTaxableIncome() {
     double grossIncome = double.tryParse(grossIncomeController.text) ?? 0;
-    return grossIncome - _getTotalDeductions();
-    
+    double calculatedTaxable = grossIncome - _getTotalDeductions();
+    return calculatedTaxable < 0 ? 0 : calculatedTaxable;
   }
 
   double _getEstimatedTaxSaved() {
@@ -185,27 +281,6 @@ class _DeductionsScreenState extends State<DeductionsScreen> {
     );
   }
 
-  Widget _infoButton(String title, String content) {
-    return IconButton(
-      icon: const Icon(Icons.info_outline, size: 18, color: Colors.blue),
-      onPressed: () {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text(title),
-            content: Text(content),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   Future<void> _saveAndContinue() async {
     setState(() => _saving = true);
 
@@ -231,6 +306,24 @@ class _DeductionsScreenState extends State<DeductionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text(
+            "Deductions",
+            style: TextStyle(color: Colors.white, fontSize: 27),
+          ),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -300,7 +393,7 @@ class _DeductionsScreenState extends State<DeductionsScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Gross Income Input
+              // Gross Income Input (Read-Only)
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -308,17 +401,32 @@ class _DeductionsScreenState extends State<DeductionsScreen> {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: Colors.green.shade200),
                 ),
-                child: TextField(
-                  controller: grossIncomeController,
-                  keyboardType: TextInputType.number,
-                  onChanged: (value) => setState(() {}),
-                  decoration: InputDecoration(
-                    labelText: 'Gross Annual Income (₹)',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(6),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: grossIncomeController,
+                      readOnly: true,
+                      decoration: InputDecoration(
+                        labelText: 'Gross Salary (₹)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        prefixIcon: const Icon(Icons.currency_rupee),
+                      ),
                     ),
-                    prefixIcon: const Icon(Icons.currency_rupee),
-                  ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: taxableSalaryController,
+                      readOnly: true,
+                      decoration: InputDecoration(
+                        labelText: 'Taxable Salary (From Form 16)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        prefixIcon: const Icon(Icons.currency_rupee),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 20),
