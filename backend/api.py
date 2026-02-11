@@ -243,6 +243,7 @@ def extract_income():
             return jsonify({'error': 'Invalid file type. Please upload PDF or image'}), 400
         
         print(f"\n📄 Processing file: {filename}")
+        print(f"🖥️  Platform: {sys.platform}")
         
         # Read file bytes
         file_bytes = file.read()
@@ -296,7 +297,7 @@ def extract_income():
                     if os.path.exists(tmp_path):
                         os.remove(tmp_path)
             
-            print(f"\n📝 Extracted text preview (first 500 chars):\n{extracted_text[:500]}\n")
+            print(f"\n📝 Extracted text preview (first 1000 chars):\n{extracted_text[:1000]}\n")
             
             # Parse income details from text
             income_data = _parse_income_data(extracted_text)
@@ -319,6 +320,7 @@ def extract_income():
 def _parse_income_data(text):
     """
     Parse income data from extracted text (optimized for Form 16)
+    Cross-platform compatible (Windows & macOS)
     
     Properly distinguishes between:
     - Gross Salary: Total salary paid (Section 1d in Form 16)
@@ -327,10 +329,19 @@ def _parse_income_data(text):
     - Other Income: Other sources (Section 7b in Form 16)
     - Business Income: Business/profession income
     """
+    # ========== TEXT NORMALIZATION FOR CROSS-PLATFORM COMPATIBILITY ==========
+    # Normalize line endings (Windows uses \r\n, Unix uses \n)
+    text = text.replace('\r\n', '\n').replace('\r', '\n')
+    
+    # Normalize whitespace (multiple spaces, tabs, etc.)
+    text = re.sub(r'[ \t]+', ' ', text)  # Replace tabs and multiple spaces with single space
+    text = re.sub(r'\n+', '\n', text)    # Replace multiple newlines with single newline
+    
+    # Remove commas from numbers
+    text = text.replace(',', '')
+    
+    # Create lowercase version
     text_lower = text.lower()
-    # Remove commas from numbers for easier parsing
-    text_normalized = text.replace(',', '')
-    text_lower_normalized = text_lower.replace(',', '')
     
     result = {
         'grossSalary': 0,
@@ -341,131 +352,154 @@ def _parse_income_data(text):
     }
     
     print("\n🔍 Parsing income data...")
-    print(f"Text length: {len(text)} characters")
+    print(f"📏 Text length: {len(text)} characters")
     
+    # ========== HELPER FUNCTIONS ==========
     def safe_extract_number(match_obj):
         """Safely extract and convert number from regex match"""
         try:
             if match_obj:
-                # Get the captured group
                 num_str = match_obj.group(1)
                 # Remove any non-numeric characters except decimal point
                 num_str = re.sub(r'[^\d.]', '', num_str)
                 # Remove trailing .00 if present
                 num_str = num_str.replace('.00', '').replace('.0', '')
                 # Convert to float then int
-                if num_str:
-                    return int(float(num_str))
-        except (ValueError, AttributeError) as e:
-            print(f"⚠️  Error converting number: {e}, match: {match_obj.group(0) if match_obj else 'None'}")
+                if num_str and num_str != '.' and len(num_str) > 0:
+                    val = int(float(num_str))
+                    # Sanity check: income should be between 0 and 100 crores
+                    if 0 <= val <= 100000000:
+                        return val
+        except (ValueError, AttributeError, IndexError) as e:
+            print(f"⚠️  Error converting: {e}")
         return 0
     
-    # ==================== GROSS SALARY ====================
-    # Form 16 Section 1(d): "d) Total Rs. 18,32,392.00"
-    gross_salary_patterns = [
-        r'd\)\s*total\s*rs\.?\s*([\d.]+)',  # Form 16 specific
-        r'1\.\s*gross\s*salary.*?d\)\s*total.*?rs\.?\s*([\d.]+)',
-        r'gross\s+salary.*?total.*?rs\.?\s*([\d.]+)',
-        r'salary\s+as\s+per.*?17\(1\).*?rs\.?\s*([\d.]+)',
-        r'salary\s+paid[:\s]*rs\.?\s*([\d.]+)',
+    def find_all_amounts():
+        """Debug: Find all Rs. amounts in document"""
+        pattern = r'(.{0,40})\s*rs\.?\s*([\d.]+)(.{0,40})'
+        matches = re.findall(pattern, text_lower, re.IGNORECASE)
+        print("\n📍 All amounts found (showing first 20):")
+        for i, (before, amount, after) in enumerate(matches[:20], 1):
+            print(f"  {i}. ...{before.strip()} Rs.{amount} {after.strip()}...")
+        print()
+    
+    # Show all amounts for debugging
+    find_all_amounts()
+    
+    # ========== PATTERN MATCHING ==========
+    
+    # Pattern 1: GROSS SALARY
+    # Look for: "d) Total Rs. 1832392.00" (Section 1 of Form 16)
+    print("🔎 Looking for Gross Salary...")
+    gross_patterns = [
+        r'd[\)\s]*total[\s\n]*rs\.?\s*([\d.]+)',  # Most specific
+        r'1\s*gross\s*salary.*?d[\)\s]*total.*?rs\.?\s*([\d.]+)',
+        r'gross\s*salary.*?total.*?rs\.?\s*([\d.]+)',
+        r'salary\s*as\s*per.*?17\s*\(\s*1\s*\).*?rs\.?\s*([\d.]+)',
     ]
     
-    for i, pattern in enumerate(gross_salary_patterns):
-        match = re.search(pattern, text_lower_normalized, re.DOTALL | re.IGNORECASE)
+    for i, pattern in enumerate(gross_patterns):
+        match = re.search(pattern, text_lower, re.DOTALL | re.IGNORECASE)
         if match:
             result['grossSalary'] = safe_extract_number(match)
             if result['grossSalary'] > 0:
-                print(f"✅ Found Gross Salary (pattern {i+1}): ₹{result['grossSalary']:,}")
+                print(f"✅ Gross Salary found (pattern {i+1}): ₹{result['grossSalary']:,}")
                 break
     
-    # ==================== TAXABLE SALARY ====================
-    # Form 16 Section 6: "Income chargeable under the head 'Salaries'"
+    # Pattern 2: TAXABLE SALARY
+    # Look for: "6. Income chargeable under the head 'Salaries' ... Rs. 1757392.00"
+    print("🔎 Looking for Taxable Salary...")
     taxable_patterns = [
-        r'6\.\s*income\s+chargeable.*?salaries.*?rs\.?\s*([\d.]+)',  # Form 16 specific
-        r'income\s+chargeable.*?head.*?salaries.*?rs\.?\s*([\d.]+)',
-        r'income\s+from\s+salaries?[:\s]*rs\.?\s*([\d.]+)',
-        r'taxable\s+(?:income\s+)?from\s+salaries?[:\s]*rs\.?\s*([\d.]+)',
-        r'taxable\s+salary[:\s]*rs\.?\s*([\d.]+)',
-        r'(?:total\s+)?taxable\s+income[:\s]*rs\.?\s*([\d.]+)',
-        r'3\.\s*total\s+amount\s+of\s+salary.*?current\s+employer.*?rs\.?\s*([\d.]+)',
+        r'6[\.\s]*income\s*chargeable.*?salaries.*?rs\.?\s*([\d.]+)',  # Most specific
+        r'income\s*chargeable.*?head.*?salaries.*?rs\.?\s*([\d.]+)',
+        r'3[\.\s]*total\s*amount.*?salary.*?current.*?employer.*?rs\.?\s*([\d.]+)',
+        r'income\s*from\s*salaries.*?rs\.?\s*([\d.]+)',
+        r'taxable\s*salary.*?rs\.?\s*([\d.]+)',
     ]
     
     for i, pattern in enumerate(taxable_patterns):
-        match = re.search(pattern, text_lower_normalized, re.DOTALL | re.IGNORECASE)
+        match = re.search(pattern, text_lower, re.DOTALL | re.IGNORECASE)
         if match:
             result['taxableSalary'] = safe_extract_number(match)
             if result['taxableSalary'] > 0:
-                print(f"✅ Found Taxable Salary (pattern {i+1}): ₹{result['taxableSalary']:,}")
+                print(f"✅ Taxable Salary found (pattern {i+1}): ₹{result['taxableSalary']:,}")
                 break
     
-    # ==================== RENTAL INCOME ====================
-    # Form 16 Section 7(a): "Income from house property"
+    # Pattern 3: RENTAL INCOME
+    # Look for: "7. (a) Income from house property Rs. 0"
+    print("🔎 Looking for Rental Income...")
     rental_patterns = [
-        r'7.*?a\).*?house\s+property.*?rs\.?\s*([\d.]+)',  # Form 16 specific
-        r'income.*?house\s+property[:\s]*rs\.?\s*([\d.]+)',
-        r'rental\s+income[:\s]*rs\.?\s*([\d.]+)',
+        r'7.*?a[\)\s].*?house\s*property.*?rs\.?\s*([\d.]+)',
+        r'income.*?house\s*property.*?rs\.?\s*([\d.]+)',
+        r'rental\s*income.*?rs\.?\s*([\d.]+)',
     ]
     
     for i, pattern in enumerate(rental_patterns):
-        match = re.search(pattern, text_lower_normalized, re.DOTALL | re.IGNORECASE)
+        match = re.search(pattern, text_lower, re.DOTALL | re.IGNORECASE)
         if match:
             result['rentalIncome'] = safe_extract_number(match)
-            print(f"✅ Found Rental Income (pattern {i+1}): ₹{result['rentalIncome']:,}")
+            print(f"✅ Rental Income found (pattern {i+1}): ₹{result['rentalIncome']:,}")
             break
     
-    # ==================== OTHER INCOME ====================
-    # Form 16 Section 7(b): "Income under the head Other Sources"
+    # Pattern 4: OTHER INCOME
+    # Look for: "7. (b) Income under the head Other Sources Rs. 0"
+    print("🔎 Looking for Other Income...")
     other_patterns = [
-        r'7.*?b\).*?other\s+sources.*?rs\.?\s*([\d.]+)',  # Form 16 specific
-        r'income.*?other\s+sources[:\s]*rs\.?\s*([\d.]+)',
-        r'other\s+(?:taxable\s+)?income[:\s]*rs\.?\s*([\d.]+)',
+        r'7.*?b[\)\s].*?other\s*sources.*?rs\.?\s*([\d.]+)',
+        r'income.*?other\s*sources.*?rs\.?\s*([\d.]+)',
+        r'other.*?income.*?rs\.?\s*([\d.]+)',
     ]
     
     for i, pattern in enumerate(other_patterns):
-        match = re.search(pattern, text_lower_normalized, re.DOTALL | re.IGNORECASE)
+        match = re.search(pattern, text_lower, re.DOTALL | re.IGNORECASE)
         if match:
             result['otherIncome'] = safe_extract_number(match)
-            print(f"✅ Found Other Income (pattern {i+1}): ₹{result['otherIncome']:,}")
+            print(f"✅ Other Income found (pattern {i+1}): ₹{result['otherIncome']:,}")
             break
     
-    # ==================== BUSINESS INCOME ====================
+    # Pattern 5: BUSINESS INCOME
+    print("🔎 Looking for Business Income...")
     business_patterns = [
-        r'income\s+from\s+(?:business|profession)[:\s]*rs\.?\s*([\d.]+)',
-        r'(?:business|professional)\s+income[:\s]*rs\.?\s*([\d.]+)',
-        r'profits?\s+and\s+gains?.*?business.*?rs\.?\s*([\d.]+)',
+        r'income.*?business.*?profession.*?rs\.?\s*([\d.]+)',
+        r'business.*?income.*?rs\.?\s*([\d.]+)',
+        r'professional\s*income.*?rs\.?\s*([\d.]+)',
     ]
     
     for i, pattern in enumerate(business_patterns):
-        match = re.search(pattern, text_lower_normalized, re.DOTALL | re.IGNORECASE)
+        match = re.search(pattern, text_lower, re.DOTALL | re.IGNORECASE)
         if match:
             result['businessIncome'] = safe_extract_number(match)
             if result['businessIncome'] > 0:
-                print(f"✅ Found Business Income (pattern {i+1}): ₹{result['businessIncome']:,}")
+                print(f"✅ Business Income found (pattern {i+1}): ₹{result['businessIncome']:,}")
                 break
     
-    # ==================== FALLBACK LOGIC ====================
-    # If taxable salary not found but gross salary exists, try to find it
+    # ========== FALLBACK LOGIC ==========
     if result['taxableSalary'] == 0 and result['grossSalary'] > 0:
         print("⚠️  Taxable salary not found, trying fallback...")
         
-        # Look for "gross total income" or similar
+        # Try to find "Gross total income" (Section 9)
         fallback_patterns = [
-            r'9\.\s*gross\s+total\s+income.*?rs\.?\s*([\d.]+)',
-            r'gross\s+total\s+income.*?rs\.?\s*([\d.]+)',
-            r'12\.\s*total\s+taxable\s+income.*?rs\.?\s*([\d.]+)',
+            r'9[\.\s]*gross\s*total\s*income.*?rs\.?\s*([\d.]+)',
+            r'12[\.\s]*total\s*taxable\s*income.*?rs\.?\s*([\d.]+)',
+            r'gross\s*total\s*income.*?rs\.?\s*([\d.]+)',
         ]
         
         for i, pattern in enumerate(fallback_patterns):
-            match = re.search(pattern, text_lower_normalized, re.DOTALL | re.IGNORECASE)
+            match = re.search(pattern, text_lower, re.DOTALL | re.IGNORECASE)
             if match:
                 fallback_val = safe_extract_number(match)
-                # Only use if it's less than gross salary (makes sense)
+                # Only use if reasonable (less than or equal to gross salary)
                 if 0 < fallback_val <= result['grossSalary']:
                     result['taxableSalary'] = fallback_val
-                    print(f"✅ Found Taxable Salary (fallback pattern {i+1}): ₹{result['taxableSalary']:,}")
+                    print(f"✅ Taxable Salary found (fallback {i+1}): ₹{result['taxableSalary']:,}")
                     break
     
-    print(f"\n📊 Final parsed data: {result}\n")
+    print(f"\n📊 Final parsed data:")
+    print(f"   Gross Salary: ₹{result['grossSalary']:,}")
+    print(f"   Taxable Salary: ₹{result['taxableSalary']:,}")
+    print(f"   Rental Income: ₹{result['rentalIncome']:,}")
+    print(f"   Other Income: ₹{result['otherIncome']:,}")
+    print(f"   Business Income: ₹{result['businessIncome']:,}\n")
     
     return result
 
