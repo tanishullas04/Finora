@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -55,7 +56,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade500,
+      backgroundColor: AppColors.background,
       body: Center(
         child: FadeTransition(
           opacity: _fadeAnimation,
@@ -66,15 +67,15 @@ class _SplashScreenState extends State<SplashScreen>
               style: TextStyle(
                 fontSize: 56,
                 fontWeight: FontWeight.w800,
-                color: Colors.blue.shade700,
+                color: AppColors.primary,
                 letterSpacing: 4,
                 shadows: [
                   Shadow(
-                    color: Colors.blue.shade200,
+                    color: AppColors.secondary.withOpacity(0.5),
                     blurRadius: 20,
                   ),
                   Shadow(
-                    color: Colors.blue.shade100,
+                    color: AppColors.secondary.withOpacity(0.2),
                     blurRadius: 40,
                   ),
                 ],

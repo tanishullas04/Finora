@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import '../services/firebase_service.dart';
 
 class RecommendationsScreen extends StatefulWidget {
@@ -157,8 +158,8 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tax Recommendations', style: TextStyle(color: Colors.white, fontSize: 27)),
-        backgroundColor: Colors.deepPurple,
+        title: const Text('Tax Recommendations', style: TextStyle(color: AppColors.widgetBackground, fontSize: 27)),
+        backgroundColor: AppColors.primary,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -173,12 +174,12 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
                       Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: Colors.deepPurple.withOpacity(0.1),
+                          color: AppColors.primaryLight,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.lightbulb, color: Colors.deepPurple, size: 24),
+                            const Icon(Icons.lightbulb, color: AppColors.primary, size: 24),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
@@ -267,7 +268,7 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
                 ),
                 child: Text(
                   rec['action'],
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: const TextStyle(color: AppColors.widgetBackground, fontWeight: FontWeight.bold),
                 ),
               ),
             ),

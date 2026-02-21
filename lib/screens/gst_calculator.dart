@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import 'package:finora/services/firebase_service.dart';
 
 class GSTCalculator extends StatefulWidget {
@@ -9,7 +10,6 @@ class GSTCalculator extends StatefulWidget {
 }
 
 enum GSTStep { typeSelection, priceInput, location, itemType, result }
-
 enum SellerType { goods, services }
 
 // Indian States and Union Territories
@@ -230,12 +230,12 @@ class _GSTCalculatorState extends State<GSTCalculator> {
         title: const Text(
           'GST Calculator',
           style: TextStyle(
-            color: Colors.white,
+            color: AppColors.widgetBackground,
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: AppColors.primary,
         elevation: 0,
       ),
       body: _isLoading
@@ -252,7 +252,7 @@ class _GSTCalculatorState extends State<GSTCalculator> {
                       horizontal: 16,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.deepPurple.shade50,
+                      color: AppColors.primaryLight,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -262,7 +262,7 @@ class _GSTCalculatorState extends State<GSTCalculator> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: Colors.deepPurple.shade700,
+                            color: AppColors.primary,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -270,9 +270,9 @@ class _GSTCalculatorState extends State<GSTCalculator> {
                           child: LinearProgressIndicator(
                             value: (_currentStep.index + 1) / 5,
                             minHeight: 6,
-                            backgroundColor: Colors.deepPurple.shade200,
+                            backgroundColor: AppColors.secondary,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.deepPurple.shade700,
+                              AppColors.primary,
                             ),
                           ),
                         ),
@@ -286,9 +286,9 @@ class _GSTCalculatorState extends State<GSTCalculator> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
+                        color: AppColors.primaryVeryLight,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.blue.shade300),
+                        border: Border.all(color: AppColors.secondary),
                       ),
                       child: const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,13 +298,13 @@ class _GSTCalculatorState extends State<GSTCalculator> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Colors.blue,
+                              color: AppColors.primary,
                             ),
                           ),
                           SizedBox(height: 8),
                           Text(
                             'Answer a few simple questions and we\'ll calculate it for you.',
-                            style: TextStyle(fontSize: 13, color: Colors.blue),
+                            style: TextStyle(fontSize: 13, color: AppColors.primary),
                           ),
                         ],
                       ),
@@ -318,7 +318,7 @@ class _GSTCalculatorState extends State<GSTCalculator> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade800,
+                        color: AppColors.text,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -345,16 +345,16 @@ class _GSTCalculatorState extends State<GSTCalculator> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade800,
+                        color: AppColors.text,
                       ),
                     ),
                     const SizedBox(height: 20),
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
+                        color: AppColors.widgetBackground,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: AppColors.border),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -427,14 +427,14 @@ class _GSTCalculatorState extends State<GSTCalculator> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade800,
+                        color: AppColors.text,
                       ),
                     ),
                     const SizedBox(height: 20),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: AppColors.border),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: DropdownButton<String>(
@@ -462,7 +462,7 @@ class _GSTCalculatorState extends State<GSTCalculator> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: AppColors.border),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: DropdownButton<String>(
@@ -526,16 +526,16 @@ class _GSTCalculatorState extends State<GSTCalculator> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade800,
+                        color: AppColors.text,
                       ),
                     ),
                     const SizedBox(height: 20),
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
+                        color: AppColors.widgetBackground,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: AppColors.border),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -569,13 +569,13 @@ class _GSTCalculatorState extends State<GSTCalculator> {
                                       padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
                                         color: _gstRate == rate
-                                            ? Colors.deepPurple.shade50
-                                            : Colors.white,
+                                            ? AppColors.primaryLight
+                                            : AppColors.widgetBackground,
                                         borderRadius: BorderRadius.circular(8),
                                         border: Border.all(
                                           color: _gstRate == rate
-                                              ? Colors.deepPurple
-                                              : Colors.grey.shade300,
+                                              ? AppColors.primary
+                                              : AppColors.border,
                                           width: _gstRate == rate ? 2 : 1,
                                         ),
                                       ),
@@ -605,7 +605,7 @@ class _GSTCalculatorState extends State<GSTCalculator> {
                                                   description,
                                                   style: TextStyle(
                                                     fontSize: 12,
-                                                    color: Colors.grey.shade600,
+                                                    color: AppColors.textMuted,
                                                   ),
                                                 ),
                                               ],
@@ -632,7 +632,7 @@ class _GSTCalculatorState extends State<GSTCalculator> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade800,
+                        color: AppColors.text,
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -676,13 +676,13 @@ class _GSTCalculatorState extends State<GSTCalculator> {
                               }
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.deepPurple,
+                              backgroundColor: AppColors.primary,
                               padding: const EdgeInsets.symmetric(vertical: 14),
                             ),
                             child: const Text(
                               'Next',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: AppColors.widgetBackground,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -706,13 +706,13 @@ class _GSTCalculatorState extends State<GSTCalculator> {
                           child: ElevatedButton(
                             onPressed: _saveAndContinue,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.deepPurple,
+                              backgroundColor: AppColors.primary,
                               padding: const EdgeInsets.symmetric(vertical: 14),
                             ),
                             child: const Text(
                               'Continue',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: AppColors.widgetBackground,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -792,10 +792,10 @@ class _GSTCalculatorState extends State<GSTCalculator> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.deepPurple.shade50 : Colors.grey.shade50,
+          color: isSelected ? AppColors.primaryLight : AppColors.widgetBackground,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? Colors.deepPurple : Colors.grey.shade300,
+            color: isSelected ? AppColors.primary : AppColors.border,
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -813,19 +813,19 @@ class _GSTCalculatorState extends State<GSTCalculator> {
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: isSelected
-                          ? Colors.deepPurple
-                          : Colors.grey.shade800,
+                          ? AppColors.primary
+                          : AppColors.text,
                     ),
                   ),
                   Text(
                     subtitle,
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                   ),
                 ],
               ),
             ),
             if (isSelected)
-              Icon(Icons.check_circle, color: Colors.deepPurple, size: 24),
+              Icon(Icons.check_circle, color: AppColors.primary, size: 24),
           ],
         ),
       ),
@@ -839,9 +839,9 @@ class _GSTCalculatorState extends State<GSTCalculator> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.deepPurple.shade50,
+            color: AppColors.primaryLight,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.deepPurple.shade200),
+            border: Border.all(color: AppColors.secondary),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -851,7 +851,7 @@ class _GSTCalculatorState extends State<GSTCalculator> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: Colors.deepPurple,
+                  color: AppColors.primary,
                 ),
               ),
               const SizedBox(height: 16),
@@ -931,7 +931,7 @@ class _GSTCalculatorState extends State<GSTCalculator> {
           style: TextStyle(
             fontSize: 13,
             fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
-            color: Colors.grey.shade700,
+            color: AppColors.textMuted,
           ),
         ),
         Text(
@@ -939,7 +939,7 @@ class _GSTCalculatorState extends State<GSTCalculator> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-            color: isBold ? Colors.deepPurple : Colors.grey.shade800,
+            color: isBold ? AppColors.primary : AppColors.text,
           ),
         ),
       ],

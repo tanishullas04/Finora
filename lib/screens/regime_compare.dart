@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import '../services/firebase_service.dart';
 
 class RegimeCompareScreen extends StatefulWidget {
@@ -231,8 +232,8 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Regime Comparison", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.indigo,
+        title: const Text("Regime Comparison", style: TextStyle(color: AppColors.widgetBackground, fontSize: 24, fontWeight: FontWeight.bold)),
+        backgroundColor: AppColors.primary,
         elevation: 0,
       ),
       body: Padding(
@@ -242,14 +243,14 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.blue.shade50,
+              color: AppColors.primaryVeryLight,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.blue.shade300),
+              border: Border.all(color: AppColors.secondary),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("📊 Income Breakdown", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.blue)),
+                const Text("📊 Income Breakdown", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primary)),
                 const SizedBox(height: 8),
                 Text("Regular Income: ${_formatCurrency(_totalIncome - _totalCapitalGains + ((_ltcgTax > 0 || _totalCapitalGains > 0) ? 0 : 0))}", 
                     style: const TextStyle(fontSize: 13)),
@@ -271,7 +272,7 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
               child: _regimeCard(
                 "Old Regime",
                 _formatCurrency(_oldRegimeTax),
-                Colors.indigo.shade50,
+                AppColors.primaryLight,
                 [
                   "Deductions allowed",
                   "Standard: ₹50,000",
@@ -315,7 +316,7 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
             onPressed: () => Navigator.pushNamed(context, '/summary'),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12),
-              backgroundColor: Colors.deepPurple,
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
             ),
             child: const SizedBox(width: double.infinity, child: Center(child: Text("View Summary & Recommendations"))),

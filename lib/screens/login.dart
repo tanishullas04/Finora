@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../theme/app_colors.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -21,6 +22,76 @@ class _LoginScreenState extends State<LoginScreen> {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _sendPasswordReset() async {
+    String email = _emailCtrl.text.trim();
+    if (email.isEmpty || !email.contains("@")) {
+      final ctrl = TextEditingController();
+      final sent = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text("Reset password"),
+          content: TextField(
+            controller: ctrl,
+            decoration: const InputDecoration(
+              labelText: "Email",
+              hintText: "Enter your registered email",
+            ),
+            keyboardType: TextInputType.emailAddress,
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                final e = ctrl.text.trim();
+                if (e.contains("@")) {
+                  email = e;
+                  Navigator.pop(ctx, true);
+                }
+              },
+              child: const Text("Send"),
+            ),
+          ],
+        ),
+      );
+      if (sent != true || email.isEmpty || !email.contains("@")) return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Check your email for a password reset link"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      String msg = "Could not send reset email";
+      if (e.code == 'user-not-found') {
+        msg = "No account found with this email";
+      } else if (e.code == 'invalid-email') {
+        msg = "Enter a valid email address";
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: ${e.toString()}")),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _login() async {
@@ -75,7 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Login", style: TextStyle(color: Colors.white, fontSize: 27)),
+        title: const Text("Login", style: TextStyle(color: AppColors.widgetBackground, fontSize: 27)),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -93,9 +164,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   "Login to continue using Finora",
-                  style: TextStyle(fontSize: 14, color: Colors.black54),
+                  style: TextStyle(fontSize: 14, color: AppColors.textMuted),
                 ),
                 const SizedBox(height: 24),
 
@@ -152,9 +223,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () {
-                      // you can add "Forgot password" flow later
-                    },
+                    onPressed: _isLoading ? null : _sendPasswordReset,
                     child: const Text("Forgot password?"),
                   ),
                 ),
@@ -195,7 +264,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: const Text(
                         "Register",
                         style: TextStyle(
-                          color: Colors.indigo,
+                          color: AppColors.primary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

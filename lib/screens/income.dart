@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
@@ -175,7 +176,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('❌ No income data found in document. Please check the file.'),
-                    backgroundColor: Colors.red,
+                    backgroundColor: AppColors.primary,
                   ),
                 );
               }
@@ -187,7 +188,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('⏱️ Connection timeout: ${e.message}\n\nMake sure the backend is running:\npython /Users/tanishullas/Desktop/Finora/backend/api.py'),
-                backgroundColor: Colors.red,
+                backgroundColor: AppColors.primary,
                 duration: const Duration(seconds: 8),
               ),
             );
@@ -198,7 +199,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('❌ Error: $e\n\nEnsure backend is running on http://localhost:5001'),
-                backgroundColor: Colors.red,
+                backgroundColor: AppColors.primary,
                 duration: const Duration(seconds: 5),
               ),
             );
@@ -215,7 +216,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.primary,
           ),
         );
       }
@@ -288,7 +289,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
     );
   }
 
-  Future<void> _saveAndContinue() async {
+  Future<void> _save() async {
     final taxableSalary = double.tryParse(taxableSalaryCtrl.text) ?? 0;
     final other = double.tryParse(otherCtrl.text) ?? 0;
     final rent = double.tryParse(rentCtrl.text) ?? 0;
@@ -299,7 +300,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('❌ Income values cannot be negative'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.primary,
         ),
       );
       return;
@@ -309,7 +310,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('❌ Please enter at least one income source'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.primary,
         ),
       );
       return;
@@ -339,7 +340,6 @@ class _IncomeScreenState extends State<IncomeScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.pushNamed(context, '/deductions');
       }
     } on TimeoutException catch (e) {
       if (mounted) {
@@ -356,7 +356,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('❌ Error saving income: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.primary,
           ),
         );
       }
@@ -370,7 +370,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
     if (_loading) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text("Income Details", style: TextStyle(color: Colors.white, fontSize: 27)),
+          title: const Text("Income Details", style: TextStyle(color: AppColors.widgetBackground, fontSize: 27)),
         ),
         body: const Center(
           child: CircularProgressIndicator(),
@@ -380,7 +380,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Income Details", style: TextStyle(color: Colors.white, fontSize: 27)),
+        title: const Text("Income Details", style: TextStyle(color: AppColors.widgetBackground, fontSize: 27)),
       ),
       body: Stack(
         children: [
@@ -391,9 +391,9 @@ class _IncomeScreenState extends State<IncomeScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
+                    color: AppColors.primaryVeryLight,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue.shade300),
+                    border: Border.all(color: AppColors.secondary),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -403,7 +403,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: Colors.blue,
+                          color: AppColors.primary,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -420,8 +420,8 @@ class _IncomeScreenState extends State<IncomeScreen> {
                           _extracting ? 'Processing...' : 'Upload PDF/Image',
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
+                          backgroundColor: AppColors.secondary,
+                          foregroundColor: AppColors.widgetBackground,
                         ),
                       ),
                       if (_selectedFileName != null)
@@ -431,7 +431,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
                             'File: $_selectedFileName',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey.shade600,
+                              color: AppColors.secondary,
                             ),
                           ),
                         ),
@@ -454,10 +454,10 @@ class _IncomeScreenState extends State<IncomeScreen> {
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: (_saving || _extracting) ? null : _saveAndContinue,
+                  onPressed: (_saving || _extracting) ? null : _save,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    backgroundColor: Colors.indigo,
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                   ),
                   child: SizedBox(
@@ -472,7 +472,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
                                 valueColor: AlwaysStoppedAnimation(Colors.white),
                               ),
                             )
-                          : const Text("Continue"),
+                          : const Text("Save"),
                     ),
                   ),
                 )
@@ -488,7 +488,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.widgetBackground,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
@@ -503,7 +503,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
                       children: [
                         const CircularProgressIndicator(
                           strokeWidth: 3,
-                          valueColor: AlwaysStoppedAnimation(Colors.indigo),
+                          valueColor: AlwaysStoppedAnimation(AppColors.primary),
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -511,7 +511,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
-                            color: Colors.black87,
+                            color: AppColors.text,
                           ),
                         ),
                       ],

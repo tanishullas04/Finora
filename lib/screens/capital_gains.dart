@@ -1,13 +1,35 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import 'package:intl/intl.dart';
 import '../services/firebase_service.dart';
 
+// Capital Gains Calculator - Config and CII per FY 2025-26
+class CapitalGainConfig {
+  static const String financialYear = '2025-26';
+  static const double ltcgRate = 0.10;
+  static const double stcgRate = 0.15;
+  static const double ltcgExemption = 100000;
+  static const double cessRate = 0.04;
+  static const double stcgSlabRate = 0.30; // For assets without STT
+  static const Map<String, int> cii = {
+    '2021-22': 317,
+    '2022-23': 331,
+    '2023-24': 348,
+    '2024-25': 363,
+    '2025-26': 365,
+  };
+}
+
+String _getFinancialYear(DateTime date) {
+  final year = date.year;
+  if (date.month < 4) {
+    return '${year - 1}-${year.toString().substring(2)}';
+  }
+  return '$year-${(year + 1).toString().substring(2)}';
+}
+
 // Capital Gains Calculator - Separates business logic from UI
 class CapitalGainCalculator {
-  // LTCG exemption constants
-  static const double ltcgExemption = 125000; // ₹1,25,000 exemption
-  static const double ltcgMutualFundsTaxRate = 0.125; // 12.5% tax
-
   static bool isLongTermAsset(AssetType asset, int days) {
     switch (asset) {
       case AssetType.property:
@@ -16,82 +38,85 @@ class CapitalGainCalculator {
         return days >= 1095; // 3 years
       case AssetType.stocks:
       case AssetType.mutualFunds:
-        return days >= 365; // 1 year
+        return days >= 365; // 1 year for equity
       default:
         return false;
     }
   }
 
+  /// Calculate capital gains tax per config.
+  /// sttPaid: true if STT paid (equity). For property/gold, always treated as false.
   static Map<String, dynamic> calculate({
     required AssetType asset,
     required double purchasePrice,
     required double sellingPrice,
     required bool isLongTerm,
+    required DateTime purchaseDate,
+    required DateTime saleDate,
+    required bool sttPaid,
   }) {
-    final capitalGain = sellingPrice - purchasePrice;
-    double taxRate = 0;
+    final gain = sellingPrice - purchasePrice;
+    double tax = 0;
     String taxSection = '';
-    double taxPayable = 0;
-    bool isCapitalLoss = capitalGain < 0;
-    double taxableAmount = capitalGain;
+    double taxableAmount = gain;
     double exemptionAmount = 0;
+    bool isCapitalLoss = gain < 0;
+
+    // Property and Gold don't have STT - use non-STT path
+    final effectiveSttPaid = (asset == AssetType.stocks || asset == AssetType.mutualFunds)
+        ? sttPaid
+        : false;
 
     if (isCapitalLoss) {
-      // Capital Loss
       taxSection = 'Capital Loss (can be carried forward)';
-      taxPayable = 0;
     } else if (isLongTerm) {
-      // Long-term capital gains
-      switch (asset) {
-        case AssetType.stocks:
-          taxRate = 0; // 0% for equity LTCG
-          taxSection = 'Section 112A';
-          taxableAmount = capitalGain;
-          break;
-        case AssetType.mutualFunds:
-          taxRate = 12.5;
-          taxSection = 'Section 112A';
-          // Apply exemption for LTCG
-          exemptionAmount = capitalGain > ltcgExemption
-              ? ltcgExemption
-              : capitalGain;
-          taxableAmount = capitalGain > ltcgExemption
-              ? capitalGain - ltcgExemption
-              : 0;
-          taxPayable = taxableAmount * ltcgMutualFundsTaxRate;
-          break;
-        case AssetType.property:
-          taxRate = 20;
-          taxSection = 'Section 112';
-          taxableAmount = capitalGain;
-          taxPayable = capitalGain * (taxRate / 100);
-          break;
-        case AssetType.gold:
-          taxRate = 20;
-          taxSection = 'Section 112';
-          taxableAmount = capitalGain;
-          taxPayable = capitalGain * (taxRate / 100);
-          break;
-        default:
-          taxRate = 20;
-          taxPayable = capitalGain * (taxRate / 100);
-      }
-      // For non-mutual fund LTCG, recalculate if not already done
-      if (asset != AssetType.mutualFunds && taxPayable == 0) {
-        taxPayable = capitalGain * (taxRate / 100);
+      if (effectiveSttPaid) {
+        // Section 112A - LTCG with STT
+        taxSection = 'Section 112A';
+        exemptionAmount = gain > CapitalGainConfig.ltcgExemption
+            ? CapitalGainConfig.ltcgExemption
+            : gain;
+        taxableAmount = (gain - CapitalGainConfig.ltcgExemption) > 0
+            ? gain - CapitalGainConfig.ltcgExemption
+            : 0;
+        tax = taxableAmount * CapitalGainConfig.ltcgRate;
+      } else {
+        // Section 112 - LTCG without STT (indexation)
+        taxSection = 'Section 112';
+        final purchaseFy = _getFinancialYear(purchaseDate);
+        final saleFy = _getFinancialYear(saleDate);
+        final ciiPurchase = CapitalGainConfig.cii[purchaseFy] ?? 317;
+        final ciiSale = CapitalGainConfig.cii[saleFy] ?? 365;
+        final indexedCost = purchasePrice * (ciiSale / ciiPurchase);
+        final indexedGain = (sellingPrice - indexedCost) > 0 ? sellingPrice - indexedCost : 0;
+        final tax20 = indexedGain * 0.20;
+        final tax10 = gain * CapitalGainConfig.ltcgRate;
+        tax = tax20 < tax10 ? tax20 : tax10;
+        taxableAmount = gain;
       }
     } else {
-      // Short-term capital gains - taxed as regular income
-      taxRate = 0;
-      taxSection = 'Added to your total income';
-      taxPayable = 0; // Will depend on total income
+      // STCG
+      if (effectiveSttPaid) {
+        taxSection = 'STCG (Sec 111A)';
+        tax = gain * CapitalGainConfig.stcgRate;
+        taxableAmount = gain;
+      } else {
+        taxSection = 'STCG (taxed at slab rate)';
+        tax = gain * CapitalGainConfig.stcgSlabRate;
+        taxableAmount = gain;
+      }
     }
 
+    final cess = tax * CapitalGainConfig.cessRate;
+    final totalTax = tax + cess;
+
     return {
-      'capitalGain': capitalGain,
-      'taxRate': taxRate,
+      'capitalGain': gain,
+      'taxRate': tax > 0 ? (tax / taxableAmount) * 100 : 0,
       'taxSection': taxSection,
-      'taxPayable': taxPayable,
+      'taxPayable': tax,
+      'cess': cess,
+      'totalTax': totalTax,
       'isCapitalLoss': isCapitalLoss,
       'taxableAmount': taxableAmount,
       'exemptionAmount': exemptionAmount,
@@ -131,6 +156,8 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
   bool _isLongTerm = false;
   double _taxRate = 0;
   double _taxPayable = 0;
+  double _cess = 0;
+  double _totalTax = 0;
   String _taxSection = '';
   bool _isCapitalLoss = false;
   Map<String, double> _stcgSlabTaxes = {};
@@ -173,23 +200,26 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
       difference.inDays,
     );
 
-    // Use calculator to determine tax
     final result = CapitalGainCalculator.calculate(
       asset: _selectedAsset,
       purchasePrice: _purchasePrice,
       sellingPrice: _sellingPrice,
       isLongTerm: _isLongTerm,
+      purchaseDate: _purchaseDate!,
+      saleDate: _saleDate!,
+      sttPaid: _sttPaid,
     );
 
-    _capitalGain = result['capitalGain'];
-    _taxRate = result['taxRate'];
-    _taxSection = result['taxSection'];
-    _taxPayable = result['taxPayable'];
-    _isCapitalLoss = result['isCapitalLoss'] ?? false;
-    _taxableAmount = result['taxableAmount'] ?? 0;
-    _exemptionAmount = result['exemptionAmount'] ?? 0;
+    _capitalGain = (result['capitalGain'] as num).toDouble();
+    _taxRate = (result['taxRate'] as num).toDouble();
+    _taxSection = result['taxSection'] as String;
+    _taxPayable = (result['taxPayable'] as num).toDouble();
+    _cess = (result['cess'] as num).toDouble();
+    _totalTax = (result['totalTax'] as num).toDouble();
+    _isCapitalLoss = result['isCapitalLoss'] as bool;
+    _taxableAmount = (result['taxableAmount'] as num).toDouble();
+    _exemptionAmount = (result['exemptionAmount'] as num).toDouble();
 
-    // Calculate STCG slab-wise taxes
     if (!_isLongTerm && _capitalGain > 0) {
       _stcgSlabTaxes = {
         '5% slab': _capitalGain * 0.05,
@@ -353,12 +383,12 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
         title: const Text(
           'Capital Gains',
           style: TextStyle(
-            color: Colors.white,
+            color: AppColors.widgetBackground,
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Colors.indigo,
+        backgroundColor: AppColors.primary,
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -370,7 +400,7 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
             Container(
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               decoration: BoxDecoration(
-                color: Colors.indigo.shade50,
+                color: AppColors.primaryLight,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -384,7 +414,7 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Colors.indigo.shade700,
+                      color: AppColors.primary,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -396,9 +426,9 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
                           ? 0.66
                           : 1.0,
                       minHeight: 6,
-                      backgroundColor: Colors.indigo.shade200,
+                      backgroundColor: AppColors.secondary,
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        Colors.indigo.shade700,
+                        AppColors.primary,
                       ),
                     ),
                   ),
@@ -413,9 +443,9 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: AppColors.primaryVeryLight,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue.shade300),
+                  border: Border.all(color: AppColors.secondary),
                 ),
                 child: const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -425,13 +455,13 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Colors.blue,
+                        color: AppColors.primary,
                       ),
                     ),
                     SizedBox(height: 8),
                     Text(
                       'We\'ll ask you a few simple questions and calculate the tax automatically.',
-                      style: TextStyle(fontSize: 13, color: Colors.blue),
+                      style: TextStyle(fontSize: 13, color: AppColors.primary),
                     ),
                   ],
                 ),
@@ -444,7 +474,7 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade800,
+                  color: AppColors.text,
                 ),
               ),
               const SizedBox(height: 16),
@@ -465,15 +495,15 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: AppColors.widgetBackground,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: AppColors.border),
                 ),
-                child: const Text(
+                child: Text(
                   'Indexation benefit removed as per Budget 2024',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.grey,
+                    color: AppColors.textMuted,
                     fontStyle: FontStyle.italic,
                   ),
                 ),
@@ -489,7 +519,7 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
                   onPressed: _resetForm,
                   child: const Text(
                     'Back',
-                    style: TextStyle(fontSize: 14, color: Colors.indigo),
+                    style: TextStyle(fontSize: 14, color: AppColors.primary),
                   ),
                 ),
               ),
@@ -503,7 +533,7 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
                       onPressed: _resetForm,
                       child: const Text(
                         'Back',
-                        style: TextStyle(fontSize: 14, color: Colors.indigo),
+                        style: TextStyle(fontSize: 14, color: AppColors.primary),
                       ),
                     ),
                   ),
@@ -530,7 +560,7 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
                         });
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.indigo,
+                        backgroundColor: AppColors.primary,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -540,7 +570,7 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
                         'See Result',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.white,
+                          color: AppColors.widgetBackground,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -556,9 +586,9 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
                     context,
                     '/regime_compare',
                   ),
-                  child: const Text(
+                  child: Text(
                     'Skip',
-                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                    style: TextStyle(fontSize: 14, color: AppColors.textMuted),
                   ),
                 ),
               ),
@@ -582,10 +612,10 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.indigo.shade50 : Colors.grey.shade50,
+          color: isSelected ? AppColors.primaryLight : AppColors.widgetBackground,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? Colors.indigo : Colors.grey.shade300,
+            color: isSelected ? AppColors.primary : AppColors.border,
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -599,12 +629,12 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: isSelected ? Colors.indigo : Colors.grey.shade800,
+                  color: isSelected ? AppColors.primary : AppColors.text,
                 ),
               ),
             ),
             if (isSelected)
-              Icon(Icons.check_circle, color: Colors.indigo, size: 24),
+              Icon(Icons.check_circle, color: AppColors.primary, size: 24),
           ],
         ),
       ),
@@ -620,7 +650,7 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.grey.shade800,
+            color: AppColors.text,
           ),
         ),
         const SizedBox(height: 24),
@@ -685,9 +715,9 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.grey.shade50,
+              color: AppColors.widgetBackground,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.grey.shade300),
+              border: Border.all(color: AppColors.border),
             ),
             child: Row(
               children: [
@@ -732,7 +762,7 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
                           '💡 What\'s this?',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.indigo,
+                            color: AppColors.primary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -757,9 +787,9 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade300),
+          border: Border.all(color: AppColors.border),
           borderRadius: BorderRadius.circular(10),
-          color: Colors.grey.shade50,
+          color: AppColors.widgetBackground,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -769,7 +799,7 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -779,12 +809,12 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: selectedDate != null ? Colors.black : Colors.grey,
+                    color: selectedDate != null ? AppColors.text : Colors.grey,
                   ),
                 ),
               ],
             ),
-            const Icon(Icons.calendar_today, color: Colors.indigo),
+            const Icon(Icons.calendar_today, color: AppColors.primary),
           ],
         ),
       ),
@@ -800,7 +830,7 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.grey.shade800,
+            color: AppColors.text,
           ),
         ),
         const SizedBox(height: 20),
@@ -866,9 +896,9 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.indigo.shade50,
+            color: AppColors.primaryLight,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.indigo.shade200),
+            border: Border.all(color: AppColors.secondary),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -878,7 +908,7 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: Colors.indigo,
+                  color: AppColors.primary,
                 ),
               ),
               const SizedBox(height: 16),
@@ -925,7 +955,7 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
-                          color: Colors.indigo,
+                          color: AppColors.primary,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -945,63 +975,56 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
                       ),
                       const SizedBox(height: 12),
                       _resultRow(
-                        'LTCG Tax (12.5%)',
+                        'LTCG Tax (10%)',
                         '₹${_taxPayable.toStringAsFixed(2)}',
+                      ),
+                      if (_cess > 0)
+                        _resultRow('Health & Edu. Cess (4%)', '₹${_cess.toStringAsFixed(2)}'),
+                      _resultRow(
+                        'Total Tax Payable',
+                        '₹${_totalTax.toStringAsFixed(2)}',
                         isBold: true,
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '₹1,25,000 exemption as per Section 112A',
+                        '₹1,00,000 exemption as per Section 112A',
                         style: TextStyle(
                           fontSize: 11,
                           fontStyle: FontStyle.italic,
                           color: Colors.green.shade600,
                         ),
                       ),
-                    ] else
+                    ] else ...[
+                      _resultRow('Tax', '₹${_taxPayable.toStringAsFixed(2)}'),
+                      if (_cess > 0)
+                        _resultRow('Health & Edu. Cess (4%)', '₹${_cess.toStringAsFixed(2)}'),
                       _resultRow(
-                        'Tax Payable',
-                        '₹${_taxPayable.toStringAsFixed(2)}',
+                        'Total Tax Payable',
+                        '₹${_totalTax.toStringAsFixed(2)}',
                         isBold: true,
                       ),
+                    ],
                   ],
                 )
               else if (_capitalGain > 0) ...[
                 const SizedBox(height: 12),
-                const Text(
-                  'Estimated Tax (based on income slab)',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.indigo,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ..._stcgSlabTaxes.entries.map(
-                  (entry) => Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: _resultRow(
-                      entry.key,
-                      '₹${entry.value.toStringAsFixed(2)}',
-                    ),
-                  ),
+                _resultRow('Tax', '₹${_taxPayable.toStringAsFixed(2)}'),
+                if (_cess > 0)
+                  _resultRow('Health & Edu. Cess (4%)', '₹${_cess.toStringAsFixed(2)}'),
+                _resultRow(
+                  'Total Tax Payable',
+                  '₹${_totalTax.toStringAsFixed(2)}',
+                  isBold: true,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Final tax depends on your total annual income.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontStyle: FontStyle.italic,
-                    color: Colors.indigo.shade600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Slabs shown are indicative as per current income tax structure.',
+                  _sttPaid
+                      ? 'STCG @ 15% (Sec 111A) + 4% cess'
+                      : 'STCG taxed at slab rate (30% assumed) + 4% cess',
                   style: TextStyle(
                     fontSize: 11,
                     fontStyle: FontStyle.italic,
-                    color: Colors.grey.shade600,
+                    color: AppColors.textMuted,
                   ),
                 ),
               ],
@@ -1065,7 +1088,7 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.widgetBackground,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
@@ -1104,7 +1127,7 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
           style: TextStyle(
             fontSize: 13,
             fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
-            color: Colors.grey.shade700,
+            color: AppColors.textMuted,
           ),
         ),
         Text(
@@ -1112,7 +1135,7 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-            color: isBold ? Colors.indigo : Colors.grey.shade800,
+            color: isBold ? AppColors.primary : AppColors.text,
           ),
         ),
       ],

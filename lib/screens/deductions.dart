@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import '../services/firebase_service.dart';
 
 class DeductionsScreen extends StatefulWidget {
@@ -225,7 +226,7 @@ class _DeductionsScreenState extends State<DeductionsScreen> {
             Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
             Text(
               subtitle,
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
             ),
           ],
         ),
@@ -281,7 +282,7 @@ class _DeductionsScreenState extends State<DeductionsScreen> {
     );
   }
 
-  Future<void> _saveAndContinue() async {
+  Future<void> _save() async {
     setState(() => _saving = true);
 
     try {
@@ -293,14 +294,18 @@ class _DeductionsScreenState extends State<DeductionsScreen> {
       );
 
       if (mounted) {
-        Navigator.pushNamed(context, '/capital_gains');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Deductions saved successfully')),
+        );
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error saving deductions: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving deductions: $e')),
+        );
+      }
     } finally {
-      setState(() => _saving = false);
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -311,7 +316,7 @@ class _DeductionsScreenState extends State<DeductionsScreen> {
         appBar: AppBar(
           title: const Text(
             "Deductions",
-            style: TextStyle(color: Colors.white, fontSize: 27),
+            style: TextStyle(color: AppColors.widgetBackground, fontSize: 27),
           ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
@@ -343,9 +348,9 @@ class _DeductionsScreenState extends State<DeductionsScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: AppColors.primaryVeryLight,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue.shade200),
+                  border: Border.all(color: AppColors.secondary),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -355,13 +360,13 @@ class _DeductionsScreenState extends State<DeductionsScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.blue,
+                        color: AppColors.primary,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       'Enter amounts you have invested or spent under different sections of the Income Tax Act.',
-                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                      style: TextStyle(fontSize: 14, color: AppColors.textMuted),
                     ),
                   ],
                 ),
@@ -477,7 +482,7 @@ class _DeductionsScreenState extends State<DeductionsScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
+                        color: AppColors.primaryVeryLight,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -566,7 +571,7 @@ class _DeductionsScreenState extends State<DeductionsScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
+                        color: AppColors.primaryVeryLight,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -744,9 +749,9 @@ class _DeductionsScreenState extends State<DeductionsScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.indigo.shade50,
+                  color: AppColors.primaryLight,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.indigo.shade200, width: 2),
+                  border: Border.all(color: AppColors.secondary, width: 2),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -836,41 +841,31 @@ class _DeductionsScreenState extends State<DeductionsScreen> {
 
               const SizedBox(height: 20),
 
-              // Action Buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Back'),
-                    ),
+              // Save Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _saving ? null : _save,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    backgroundColor: AppColors.primary,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _saving ? null : _saveAndContinue,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        backgroundColor: Colors.indigo,
-                      ),
-                      child: _saving
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation(
-                                  Colors.white,
-                                ),
-                              ),
-                            )
-                          : const Text(
-                              'Save & Continue',
-                              style: TextStyle(color: Colors.white),
+                  child: _saving
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(
+                              AppColors.widgetBackground,
                             ),
-                    ),
-                  ),
-                ],
+                          ),
+                        )
+                      : const Text(
+                          'Save',
+                          style: TextStyle(color: AppColors.widgetBackground),
+                        ),
+                ),
               ),
 
               const SizedBox(height: 20),

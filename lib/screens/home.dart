@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -52,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen>
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Scaffold(
-        appBar: AppBar(title: const Text("Dashboard", style: TextStyle(color: Colors.white, fontSize: 27))),
+        appBar: AppBar(title: const Text("Dashboard", style: TextStyle(color: AppColors.widgetBackground, fontSize: 27))),
         body: Padding(
           padding: const EdgeInsets.all(14),
           child: GridView.builder(
@@ -76,7 +77,7 @@ class _HomeScreenState extends State<HomeScreen>
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(f['icon'], size: 42, color: Colors.indigo),
+                        Icon(f['icon'], size: 42, color: AppColors.primary),
                         const SizedBox(height: 10),
                         Text(f['title'], style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                       ],

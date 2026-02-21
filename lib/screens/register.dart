@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../theme/app_colors.dart';
 import '../services/firebase_service.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -92,7 +93,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Register", style: TextStyle(color: Colors.white, fontSize: 27)),
+        title: const Text("Register", style: TextStyle(color: AppColors.widgetBackground, fontSize: 27)),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -249,7 +250,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: const Text(
                         "Login",
                         style: TextStyle(
-                          color: Colors.indigo,
+                          color: AppColors.primary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

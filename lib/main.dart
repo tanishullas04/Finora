@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'theme/app_colors.dart';
 import 'firebase_options.dart';
 import 'screens/splash.dart';
 import 'screens/login.dart';
@@ -32,13 +33,32 @@ class TaxApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
-        scaffoldBackgroundColor: Colors.grey.shade500,
-        appBarTheme: AppBarTheme(centerTitle: true, elevation: 0, backgroundColor: Colors.grey.shade500),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          primary: AppColors.primary,
+          secondary: AppColors.secondary,
+          surface: AppColors.widgetBackground,
+          onPrimary: Colors.white,
+          onSecondary: Colors.white,
+          onSurface: AppColors.text,
+          onError: Colors.white,
+        ),
+        scaffoldBackgroundColor: AppColors.background,
+        appBarTheme: const AppBarTheme(
+          centerTitle: true,
+          elevation: 0,
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+        ),
+        cardTheme: CardThemeData(
+          color: AppColors.widgetBackground,
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           filled: true,
-          fillColor: Colors.indigo.withOpacity(0.04),
+          fillColor: AppColors.primaryVeryLight,
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(

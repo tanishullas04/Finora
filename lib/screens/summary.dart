@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import 'package:lottie/lottie.dart';
 import '../services/firebase_service.dart';
 
@@ -162,7 +163,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Tax Summary", style: TextStyle(color: Colors.white, fontSize: 27))),
+      appBar: AppBar(title: const Text("Tax Summary", style: TextStyle(color: AppColors.widgetBackground, fontSize: 27))),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error.isNotEmpty
@@ -271,19 +272,19 @@ class _SummaryScreenState extends State<SummaryScreen> {
                         ElevatedButton(
                           onPressed: () => Navigator.pushNamed(context, '/recommendations'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.indigo,
+                            backgroundColor: AppColors.primary,
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
-                          child: const SizedBox(width: double.infinity, child: Center(child: Text('View Recommendations', style: TextStyle(color: Colors.white)))),
+                          child: const SizedBox(width: double.infinity, child: Center(child: Text('View Recommendations', style: TextStyle(color: AppColors.widgetBackground)))),
                         ),
                         const SizedBox(height: 8),
                         ElevatedButton(
                           onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("PDF Export Coming Soon"))),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey,
+                            backgroundColor: AppColors.secondary,
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
-                          child: const SizedBox(width: double.infinity, child: Center(child: Text('Export PDF', style: TextStyle(color: Colors.white)))),
+                          child: const SizedBox(width: double.infinity, child: Center(child: Text('Export PDF', style: TextStyle(color: AppColors.widgetBackground)))),
                         ),
                       ],
                     ),
