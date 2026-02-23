@@ -63,7 +63,8 @@ class CapitalGainCalculator {
     bool isCapitalLoss = gain < 0;
 
     // Property and Gold don't have STT - use non-STT path
-    final effectiveSttPaid = (asset == AssetType.stocks || asset == AssetType.mutualFunds)
+    final effectiveSttPaid =
+        (asset == AssetType.stocks || asset == AssetType.mutualFunds)
         ? sttPaid
         : false;
 
@@ -88,7 +89,9 @@ class CapitalGainCalculator {
         final ciiPurchase = CapitalGainConfig.cii[purchaseFy] ?? 317;
         final ciiSale = CapitalGainConfig.cii[saleFy] ?? 365;
         final indexedCost = purchasePrice * (ciiSale / ciiPurchase);
-        final indexedGain = (sellingPrice - indexedCost) > 0 ? sellingPrice - indexedCost : 0;
+        final indexedGain = (sellingPrice - indexedCost) > 0
+            ? sellingPrice - indexedCost
+            : 0;
         final tax20 = indexedGain * 0.20;
         final tax10 = gain * CapitalGainConfig.ltcgRate;
         tax = tax20 < tax10 ? tax20 : tax10;
@@ -533,7 +536,10 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
                       onPressed: _resetForm,
                       child: const Text(
                         'Back',
-                        style: TextStyle(fontSize: 14, color: AppColors.primary),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.primary,
+                        ),
                       ),
                     ),
                   ),
@@ -578,20 +584,6 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: () => Navigator.pushReplacementNamed(
-                    context,
-                    '/regime_compare',
-                  ),
-                  child: Text(
-                    'Skip',
-                    style: TextStyle(fontSize: 14, color: AppColors.textMuted),
-                  ),
-                ),
-              ),
             ],
           ],
         ),
@@ -612,7 +604,9 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryLight : AppColors.widgetBackground,
+          color: isSelected
+              ? AppColors.primaryLight
+              : AppColors.widgetBackground,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.border,
@@ -979,7 +973,10 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
                         '₹${_taxPayable.toStringAsFixed(2)}',
                       ),
                       if (_cess > 0)
-                        _resultRow('Health & Edu. Cess (4%)', '₹${_cess.toStringAsFixed(2)}'),
+                        _resultRow(
+                          'Health & Edu. Cess (4%)',
+                          '₹${_cess.toStringAsFixed(2)}',
+                        ),
                       _resultRow(
                         'Total Tax Payable',
                         '₹${_totalTax.toStringAsFixed(2)}',
@@ -997,7 +994,10 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
                     ] else ...[
                       _resultRow('Tax', '₹${_taxPayable.toStringAsFixed(2)}'),
                       if (_cess > 0)
-                        _resultRow('Health & Edu. Cess (4%)', '₹${_cess.toStringAsFixed(2)}'),
+                        _resultRow(
+                          'Health & Edu. Cess (4%)',
+                          '₹${_cess.toStringAsFixed(2)}',
+                        ),
                       _resultRow(
                         'Total Tax Payable',
                         '₹${_totalTax.toStringAsFixed(2)}',
@@ -1010,7 +1010,10 @@ class _CapitalGainsScreenState extends State<CapitalGainsScreen> {
                 const SizedBox(height: 12),
                 _resultRow('Tax', '₹${_taxPayable.toStringAsFixed(2)}'),
                 if (_cess > 0)
-                  _resultRow('Health & Edu. Cess (4%)', '₹${_cess.toStringAsFixed(2)}'),
+                  _resultRow(
+                    'Health & Edu. Cess (4%)',
+                    '₹${_cess.toStringAsFixed(2)}',
+                  ),
                 _resultRow(
                   'Total Tax Payable',
                   '₹${_totalTax.toStringAsFixed(2)}',
