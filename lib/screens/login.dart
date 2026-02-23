@@ -13,6 +13,9 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailCtrl = TextEditingController();
   final TextEditingController _passwordCtrl = TextEditingController();
 
+  // controller used in the reset dialog
+  final TextEditingController _resetEmailCtrl = TextEditingController();
+
   bool _obscure = true;
   bool _isLoading = false;
 
@@ -20,6 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
+    _resetEmailCtrl.dispose();
     super.dispose();
   }
 
@@ -49,17 +53,17 @@ class _LoginScreenState extends State<LoginScreen> {
         } else if (e.code == 'user-disabled') {
           errorMessage = "This account has been disabled";
         }
-        
+
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(errorMessage)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(errorMessage)));
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Error: ${e.toString()}")),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("Error: ${e.toString()}")));
         }
       } finally {
         if (mounted) {
@@ -71,11 +75,88 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _resetPassword(String email) async {
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email.trim());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password reset link sent. Check your email.'),
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      String msg = 'Failed to send reset email';
+      if (e.code == 'user-not-found') {
+        msg = 'No account found for that email';
+      } else if (e.code == 'invalid-email') {
+        msg = 'Invalid email address';
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+      }
+    }
+  }
+
+  void _showForgotPasswordDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Reset Password'),
+          content: TextField(
+            controller: _resetEmailCtrl,
+            keyboardType: TextInputType.emailAddress,
+            decoration: const InputDecoration(
+              labelText: 'Email',
+              hintText: 'Enter your account email',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final email = _resetEmailCtrl.text.trim();
+                if (email.isNotEmpty && email.contains('@')) {
+                  _resetPassword(email);
+                  _resetEmailCtrl.clear();
+                  Navigator.of(context).pop();
+                } else {
+                  // simple validation message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a valid email')),
+                  );
+                }
+              },
+              child: const Text('Send'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Login", style: TextStyle(color: Colors.white, fontSize: 27)),
+        title: const Text(
+          "Login",
+          style: TextStyle(color: Colors.white, fontSize: 27),
+        ),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -87,10 +168,7 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const Text(
                   "Welcome back 👋",
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 4),
                 const Text(
@@ -152,9 +230,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () {
-                      // you can add "Forgot password" flow later
-                    },
+                    onPressed: _showForgotPasswordDialog,
                     child: const Text("Forgot password?"),
                   ),
                 ),
@@ -172,13 +248,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
                             )
-                          : const Text(
-                              "Login",
-                              style: TextStyle(fontSize: 16),
-                            ),
+                          : const Text("Login", style: TextStyle(fontSize: 16)),
                     ),
                   ),
                 ),
@@ -201,7 +276,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ],
-                )
+                ),
               ],
             ),
           ),
