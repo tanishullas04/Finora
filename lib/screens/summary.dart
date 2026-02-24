@@ -2,6 +2,15 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'package:lottie/lottie.dart';
 import '../services/firebase_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+// PDF generation
+import 'package:pdf/widgets.dart' as pw;
+import 'package:pdf/pdf.dart' as pdf;
+import 'package:printing/printing.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 class SummaryScreen extends StatefulWidget {
   const SummaryScreen({super.key});
@@ -14,6 +23,8 @@ class _SummaryScreenState extends State<SummaryScreen> {
   final FirebaseService _firebaseService = FirebaseService();
   bool _loading = true;
   String _error = '';
+
+  Map<String, dynamic>? _userProfile;
 
   double _totalIncome = 0;
   double _totalDeductions = 0;
@@ -38,6 +49,12 @@ class _SummaryScreenState extends State<SummaryScreen> {
       final deductionsData = await _firebaseService.getDeductions();
       final cgData = await _firebaseService.getCapitalGains();
       final gstData = await _firebaseService.getGST();
+
+      // Fetch user profile
+      if (_firebaseService.currentUserId != null) {
+        _userProfile = await _firebaseService.getUserProfile(
+            _firebaseService.currentUserId!);
+      }
 
       // Parse income
       double income =
@@ -102,6 +119,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
         _newRegimeTax = newTotal;
         _bestRegime = oldTotal > newTotal ? 'New Regime' : 'Old Regime';
         _savings = (oldTotal - newTotal).abs();
+        _userProfile = _userProfile; // ensure state updated
         _loading = false;
       });
     } catch (e) {
@@ -193,6 +211,107 @@ class _SummaryScreenState extends State<SummaryScreen> {
     return '₹${value.toStringAsFixed(0)}';
   }
 
+  Widget _buildProfileField(String label, String key) {
+    final val = _userProfile?[key]?.toString();
+    return ListTile(
+      dense: true,
+      contentPadding: EdgeInsets.zero,
+      title: Text(label),
+      trailing: Text(
+        (val != null && val.isNotEmpty) ? val : '-',
+        style: const TextStyle(fontSize: 14),
+      ),
+    );
+  }
+
+  Future<void> _logout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Logout failed: $e')),
+      );
+    }
+  }
+
+  Future<void> _exportPdf() async {
+    try {
+      final doc = pw.Document();
+
+      doc.addPage(
+        pw.MultiPage(
+          pageFormat: pdf.PdfPageFormat.a4,
+          build: (context) {
+            return [
+              pw.Header(level: 0, text: 'Tax Summary'),
+              if (_userProfile != null) pw.Header(level: 1, text: 'Profile'),
+              if (_userProfile != null)
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('Name: ${_userProfile?['name'] ?? '-'}'),
+                    pw.Text('Email: ${_userProfile?['email'] ?? '-'}'),
+                    pw.Text('Phone: ${_userProfile?['phone'] ?? '-'}'),
+                    pw.Text('Filing Status: ${_userProfile?['filingStatus'] ?? '-'}'),
+                    pw.Text('Residential Status: ${_userProfile?['residentialStatus'] ?? '-'}'),
+                    pw.Text('Tax Regime Preference: ${_userProfile?['taxRegime'] ?? '-'}'),
+                  ],
+                ),
+              pw.Header(level: 1, text: 'Income Breakdown'),
+              pw.Text('Salary & Other Income: ${_formatCurrency(_totalIncome)}'),
+              pw.Text('STCG: ${_formatCurrency(_stcgTotal)}'),
+              pw.Text('Total Income: ${_formatCurrency(_totalIncome + _stcgTotal)}'),
+              pw.SizedBox(height: 10),
+              pw.Header(level: 1, text: 'Deductions & Taxes'),
+              pw.Text('Deductions: ${_formatCurrency(_totalDeductions)}'),
+              pw.Text('LTCG Tax: ${_formatCurrency(_ltcgTax)}'),
+              pw.Text('GST Tax: ${_formatCurrency(_totalGSTTax)}'),
+              pw.SizedBox(height: 10),
+              pw.Header(level: 1, text: 'Regime Comparison'),
+              pw.Text('Old Regime: ${_formatCurrency(_oldRegimeTax)}'),
+              pw.Text('New Regime: ${_formatCurrency(_newRegimeTax)}'),
+              pw.SizedBox(height: 5),
+              pw.Text('Best: $_bestRegime'),
+              pw.Text('Savings: ${_formatCurrency(_savings)}'),
+            ];
+          },
+        ),
+      );
+
+      final bytes = await doc.save();
+
+      // On web, just open the print dialog to save/print
+      if (kIsWeb) {
+        await Printing.sharePdf(bytes: bytes, filename: 'tax_summary.pdf');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('PDF ready to download or print')),
+          );
+        }
+      } else {
+        // On mobile/desktop, save to local file and share
+        final dir = await getApplicationDocumentsDirectory();
+        final file = File('${dir.path}/tax_summary.pdf');
+        await file.writeAsBytes(bytes);
+
+        await Printing.sharePdf(bytes: bytes, filename: 'tax_summary.pdf');
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('PDF saved at ${file.path}')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to export PDF: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -214,6 +333,71 @@ class _SummaryScreenState extends State<SummaryScreen> {
                   children: [
                     Lottie.asset('assets/lottie/success.json', height: 120),
                     const SizedBox(height: 16),
+
+                    // User Profile Card
+                    if (_userProfile != null) ...[
+                      Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 24,
+                                    child: Text(
+                                      _userProfile?['name'] != null &&
+                                              _userProfile!['name'].isNotEmpty
+                                          ? _userProfile!['name'][0]
+                                              .toUpperCase()
+                                          : '?',
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          _userProfile?['name'] ?? '-',
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          _userProfile?['email'] ?? '-',
+                                          style: const TextStyle(
+                                              color: Colors.grey),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context)
+                                          .pushNamed('/profile')
+                                          .then((_) => _loadData());
+                                    },
+                                    child: const Text('Edit'),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              _buildProfileField('Phone', 'phone'),
+                              _buildProfileField('Filing Status', 'filingStatus'),
+                              _buildProfileField('Residential Status',
+                                  'residentialStatus'),
+                              _buildProfileField('Tax Regime Preference',
+                                  'taxRegime'),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
 
                     // Income Breakdown
                     Card(
@@ -381,12 +565,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
                     // Action Buttons
                     const SizedBox(height: 12),
                     ElevatedButton(
-                      onPressed: () =>
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("PDF Export Coming Soon"),
-                            ),
-                          ),
+                      onPressed: _exportPdf,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.secondary,
                         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -397,6 +576,23 @@ class _SummaryScreenState extends State<SummaryScreen> {
                           child: Text(
                             'Export PDF',
                             style: TextStyle(color: AppColors.widgetBackground),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: _logout,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const SizedBox(
+                        width: double.infinity,
+                        child: Center(
+                          child: Text(
+                            'Logout',
+                            style: TextStyle(color: Colors.white),
                           ),
                         ),
                       ),

@@ -27,18 +27,7 @@ class _HomeScreenState extends State<HomeScreen>
       "route": "/gst_calculator",
       "icon": Icons.calculate,
     },
-    {
-      "title": "Regime Compare",
-      "route": "/regime_compare",
-      "icon": Icons.compare_arrows,
-    },
     {"title": "AI Advisor", "route": "/ai_advice", "icon": Icons.smart_toy},
-    {"title": "Summary", "route": "/summary", "icon": Icons.summarize},
-    {
-      "title": "Recommendations",
-      "route": "/recommendations",
-      "icon": Icons.lightbulb,
-    },
   ];
 
   @override
@@ -81,6 +70,13 @@ class _HomeScreenState extends State<HomeScreen>
               fontSize: 22,
             ),
           ),
+          actions: [
+            IconButton(
+              tooltip: 'Profile',
+              icon: const Icon(Icons.person),
+              onPressed: () => Navigator.pushNamed(context, '/summary'),
+            ),
+          ],
         ),
         body: Padding(
           padding: const EdgeInsets.all(14),

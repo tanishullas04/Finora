@@ -13,6 +13,7 @@ import 'screens/gst_calculator.dart';
 import 'screens/capital_gains.dart';
 import 'screens/ai_advice.dart';
 import 'screens/summary.dart';
+import 'screens/profile_edit.dart';
 import 'screens/recommendations.dart';
 
 void main() async {
@@ -84,6 +85,7 @@ class TaxApp extends StatelessWidget {
         '/gst_calculator': (_) => const GSTCalculator(),
         '/regime_compare': (_) => const RegimeCompareScreen(),
         '/summary': (_) => const SummaryScreen(),
+        '/profile': (_) => const ProfileEditScreen(),
         '/recommendations': (_) => const RecommendationsScreen(),
         '/ai_advice': (_) => const AiAdviceScreen(),
       },
