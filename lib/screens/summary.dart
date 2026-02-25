@@ -53,7 +53,8 @@ class _SummaryScreenState extends State<SummaryScreen> {
       // Fetch user profile
       if (_firebaseService.currentUserId != null) {
         _userProfile = await _firebaseService.getUserProfile(
-            _firebaseService.currentUserId!);
+          _firebaseService.currentUserId!,
+        );
       }
 
       // Parse income
@@ -229,9 +230,9 @@ class _SummaryScreenState extends State<SummaryScreen> {
       await FirebaseAuth.instance.signOut();
       Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Logout failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Logout failed: $e')));
     }
   }
 
@@ -253,15 +254,25 @@ class _SummaryScreenState extends State<SummaryScreen> {
                     pw.Text('Name: ${_userProfile?['name'] ?? '-'}'),
                     pw.Text('Email: ${_userProfile?['email'] ?? '-'}'),
                     pw.Text('Phone: ${_userProfile?['phone'] ?? '-'}'),
-                    pw.Text('Filing Status: ${_userProfile?['filingStatus'] ?? '-'}'),
-                    pw.Text('Residential Status: ${_userProfile?['residentialStatus'] ?? '-'}'),
-                    pw.Text('Tax Regime Preference: ${_userProfile?['taxRegime'] ?? '-'}'),
+                    pw.Text(
+                      'Filing Status: ${_userProfile?['filingStatus'] ?? '-'}',
+                    ),
+                    pw.Text(
+                      'Residential Status: ${_userProfile?['residentialStatus'] ?? '-'}',
+                    ),
+                    pw.Text(
+                      'Tax Regime Preference: ${_userProfile?['taxRegime'] ?? '-'}',
+                    ),
                   ],
                 ),
               pw.Header(level: 1, text: 'Income Breakdown'),
-              pw.Text('Salary & Other Income: ${_formatCurrency(_totalIncome)}'),
+              pw.Text(
+                'Salary & Other Income: ${_formatCurrency(_totalIncome)}',
+              ),
               pw.Text('STCG: ${_formatCurrency(_stcgTotal)}'),
-              pw.Text('Total Income: ${_formatCurrency(_totalIncome + _stcgTotal)}'),
+              pw.Text(
+                'Total Income: ${_formatCurrency(_totalIncome + _stcgTotal)}',
+              ),
               pw.SizedBox(height: 10),
               pw.Header(level: 1, text: 'Deductions & Taxes'),
               pw.Text('Deductions: ${_formatCurrency(_totalDeductions)}'),
@@ -298,16 +309,16 @@ class _SummaryScreenState extends State<SummaryScreen> {
         await Printing.sharePdf(bytes: bytes, filename: 'tax_summary.pdf');
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('PDF saved at ${file.path}')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('PDF saved at ${file.path}')));
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to export PDF: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to export PDF: $e')));
       }
     }
   }
@@ -351,7 +362,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
                                       _userProfile?['name'] != null &&
                                               _userProfile!['name'].isNotEmpty
                                           ? _userProfile!['name'][0]
-                                              .toUpperCase()
+                                                .toUpperCase()
                                           : '?',
                                     ),
                                   ),
@@ -364,14 +375,16 @@ class _SummaryScreenState extends State<SummaryScreen> {
                                         Text(
                                           _userProfile?['name'] ?? '-',
                                           style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16),
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
                                           _userProfile?['email'] ?? '-',
                                           style: const TextStyle(
-                                              color: Colors.grey),
+                                            color: Colors.grey,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -388,11 +401,18 @@ class _SummaryScreenState extends State<SummaryScreen> {
                               ),
                               const SizedBox(height: 12),
                               _buildProfileField('Phone', 'phone'),
-                              _buildProfileField('Filing Status', 'filingStatus'),
-                              _buildProfileField('Residential Status',
-                                  'residentialStatus'),
-                              _buildProfileField('Tax Regime Preference',
-                                  'taxRegime'),
+                              _buildProfileField(
+                                'Filing Status',
+                                'filingStatus',
+                              ),
+                              _buildProfileField(
+                                'Residential Status',
+                                'residentialStatus',
+                              ),
+                              _buildProfileField(
+                                'Tax Regime Preference',
+                                'taxRegime',
+                              ),
                             ],
                           ),
                         ),
@@ -464,98 +484,6 @@ class _SummaryScreenState extends State<SummaryScreen> {
                             ListTile(
                               title: const Text('GST Tax'),
                               trailing: Text(_formatCurrency(_totalGSTTax)),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // Regime Comparison
-                    Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Tax Comparison',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    children: [
-                                      const Text(
-                                        'Old Regime',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        _formatCurrency(_oldRegimeTax),
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.red,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Column(
-                                    children: [
-                                      const Text(
-                                        'New Regime',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        _formatCurrency(_newRegimeTax),
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.green,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.yellow.shade100,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.check_circle,
-                                    color: Colors.green,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      'Best: $_bestRegime\nSavings: ${_formatCurrency(_savings)}',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
                             ),
                           ],
                         ),
