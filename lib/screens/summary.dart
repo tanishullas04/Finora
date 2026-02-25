@@ -133,10 +133,12 @@ class _SummaryScreenState extends State<SummaryScreen> {
   double _calculateOldRegimeTax(double taxableIncome) {
     if (taxableIncome <= 250000) return 0;
     if (taxableIncome <= 500000) return (taxableIncome - 250000) * 0.05;
-    if (taxableIncome <= 1000000)
+    if (taxableIncome <= 1000000) {
       return 12500 + (taxableIncome - 500000) * 0.20;
-    if (taxableIncome <= 1500000)
+    }
+    if (taxableIncome <= 1500000) {
       return 112500 + (taxableIncome - 1000000) * 0.30;
+    }
     return 262500 + (taxableIncome - 1500000) * 0.30;
   }
 
@@ -144,10 +146,12 @@ class _SummaryScreenState extends State<SummaryScreen> {
     if (taxableIncome <= 300000) return 0;
     if (taxableIncome <= 600000) return (taxableIncome - 300000) * 0.05;
     if (taxableIncome <= 900000) return 15000 + (taxableIncome - 600000) * 0.10;
-    if (taxableIncome <= 1200000)
+    if (taxableIncome <= 1200000) {
       return 45000 + (taxableIncome - 900000) * 0.15;
-    if (taxableIncome <= 1500000)
+    }
+    if (taxableIncome <= 1500000) {
       return 90000 + (taxableIncome - 1200000) * 0.20;
+    }
     return 150000 + (taxableIncome - 1500000) * 0.30;
   }
 
@@ -163,9 +167,9 @@ class _SummaryScreenState extends State<SummaryScreen> {
     if (ltcgRealEstate > 0) {
       double tax = ltcgRealEstate * 0.20;
       double surcharge = 0;
-      if (totalIncome > 5000000)
+      if (totalIncome > 5000000) {
         surcharge = tax * 0.25;
-      else if (totalIncome > 1000000)
+      } else if (totalIncome > 1000000)
         surcharge = tax * 0.15;
       else if (totalIncome > 500000)
         surcharge = tax * 0.10;
@@ -176,9 +180,9 @@ class _SummaryScreenState extends State<SummaryScreen> {
     if (ltcgMutualFunds > 0) {
       double tax = ltcgMutualFunds * 0.15;
       double surcharge = 0;
-      if (totalIncome > 5000000)
+      if (totalIncome > 5000000) {
         surcharge = tax * 0.25;
-      else if (totalIncome > 1000000)
+      } else if (totalIncome > 1000000)
         surcharge = tax * 0.15;
       else if (totalIncome > 500000)
         surcharge = tax * 0.10;
@@ -189,9 +193,9 @@ class _SummaryScreenState extends State<SummaryScreen> {
     if (ltcgOther > 0) {
       double tax = ltcgOther * 0.20;
       double surcharge = 0;
-      if (totalIncome > 5000000)
+      if (totalIncome > 5000000) {
         surcharge = tax * 0.25;
-      else if (totalIncome > 1000000)
+      } else if (totalIncome > 1000000)
         surcharge = tax * 0.15;
       else if (totalIncome > 500000)
         surcharge = tax * 0.10;
