@@ -1,0 +1,315 @@
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../theme/app_colors.dart';
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _emailCtrl = TextEditingController();
+  final TextEditingController _passwordCtrl = TextEditingController();
+
+  bool _obscure = true;
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _passwordCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _sendPasswordReset() async {
+    String email = _emailCtrl.text.trim();
+    if (email.isEmpty || !email.contains("@")) {
+      final ctrl = TextEditingController();
+      final sent = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text("Reset password"),
+          content: TextField(
+            controller: ctrl,
+            decoration: const InputDecoration(
+              labelText: "Email",
+              hintText: "Enter your registered email",
+            ),
+            keyboardType: TextInputType.emailAddress,
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                final e = ctrl.text.trim();
+                if (e.contains("@")) {
+                  email = e;
+                  Navigator.pop(ctx, true);
+                }
+              },
+              child: const Text("Send"),
+            ),
+          ],
+        ),
+      );
+      if (sent != true || email.isEmpty || !email.contains("@")) return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Check your email for a password reset link"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      String msg = "Could not send reset email";
+      if (e.code == 'user-not-found') {
+        msg = "No account found with this email";
+      } else if (e.code == 'invalid-email') {
+        msg = "Enter a valid email address";
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error: ${e.toString()}")));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _login() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        // Sign in user
+        UserCredential userCredential = await FirebaseAuth.instance
+            .signInWithEmailAndPassword(
+              email: _emailCtrl.text.trim(),
+              password: _passwordCtrl.text.trim(),
+            );
+
+        User? user = userCredential.user;
+
+        if (user != null) {
+          // 🔹 Check if email is verified
+          if (!user.emailVerified) {
+            // Send verification email
+            await user.sendEmailVerification();
+
+            // Sign out user
+            await FirebaseAuth.instance.signOut();
+
+            if (mounted) {
+              ScaffoldMessenger.of(context)
+                ..hideCurrentSnackBar()
+                ..showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      "Email not verified. Verification link sent to your email.",
+                    ),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+            }
+
+            return; // Stop further execution
+          }
+
+          // ✅ Email verified → proceed to home
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, '/home');
+          }
+        }
+      } on FirebaseAuthException catch (e) {
+        String errorMessage = "Login failed";
+
+        if (e.code == 'user-not-found') {
+          errorMessage = "No user found with this email";
+        } else if (e.code == 'wrong-password') {
+          errorMessage = "Incorrect password";
+        } else if (e.code == 'invalid-email') {
+          errorMessage = "The email address is invalid";
+        } else if (e.code == 'user-disabled') {
+          errorMessage = "This account has been disabled";
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text(errorMessage)));
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text("Error: ${e.toString()}")));
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          "Login",
+          style: TextStyle(color: AppColors.widgetBackground, fontSize: 27),
+        ),
+      ),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Welcome back 👋",
+                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Login to continue using Finora",
+                  style: TextStyle(fontSize: 14, color: AppColors.textMuted),
+                ),
+                const SizedBox(height: 24),
+
+                // Email
+                TextFormField(
+                  controller: _emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: "Email",
+                    prefixIcon: Icon(Icons.email_outlined),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "Please enter your email";
+                    }
+                    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+                    if (!emailRegex.hasMatch(value)) {
+                      return "Enter a valid email";
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Password
+                TextFormField(
+                  controller: _passwordCtrl,
+                  obscureText: _obscure,
+                  decoration: InputDecoration(
+                    labelText: "Password",
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscure ? Icons.visibility_off : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscure = !_obscure;
+                        });
+                      },
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "Please enter your password";
+                    }
+                    if (value.length < 6) {
+                      return "Password must be at least 6 characters";
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 8),
+
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: _isLoading ? null : _sendPasswordReset,
+                    child: const Text("Forgot password?"),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _login,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                          : const Text("Login", style: TextStyle(fontSize: 16)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("Don't have an account? "),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(context, '/register');
+                      },
+                      child: const Text(
+                        "Register",
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

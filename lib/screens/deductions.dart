@@ -1,0 +1,878 @@
+import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
+import '../services/firebase_service.dart';
+
+class DeductionsScreen extends StatefulWidget {
+  const DeductionsScreen({super.key});
+  @override
+  State<DeductionsScreen> createState() => _DeductionsScreenState();
+}
+
+class _DeductionsScreenState extends State<DeductionsScreen> {
+  // Section 80C controllers & state
+  final TextEditingController epfController = TextEditingController();
+  final TextEditingController lifeInsuranceController = TextEditingController();
+  final TextEditingController elssController = TextEditingController();
+  final TextEditingController nscController = TextEditingController();
+  final TextEditingController tuitionController = TextEditingController();
+
+  bool epfSelected = false;
+  bool lifeInsuranceSelected = false;
+  bool elssSelected = false;
+  bool nscSelected = false;
+  bool tuitionSelected = false;
+
+  // Section 80D controllers & state
+  final TextEditingController selfFamilyPremiumController =
+      TextEditingController();
+  final TextEditingController parentsPremiumController =
+      TextEditingController();
+  bool parentsSeniorCitizen = false;
+
+  // Section 24 controllers & state
+  final TextEditingController homeLoanInterestController =
+      TextEditingController();
+  bool isSelfOccupied = true;
+
+  // Other deductions
+  final TextEditingController educationLoanController = TextEditingController();
+  final TextEditingController donationController = TextEditingController();
+  final TextEditingController npsExtraController = TextEditingController();
+  final TextEditingController savingsInterestController =
+      TextEditingController();
+
+  // Gross income for summary
+  final TextEditingController grossIncomeController = TextEditingController();
+  final TextEditingController taxableSalaryController = TextEditingController();
+
+  final FirebaseService _firebaseService = FirebaseService();
+  bool _saving = false;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedData();
+  }
+
+  Future<void> _loadSavedData() async {
+    try {
+      print('DEBUG: Loading saved deductions data...');
+      final deductionsData = await _firebaseService.getDeductions();
+      final incomeData = await _firebaseService.getIncome();
+      
+      if (mounted) {
+        setState(() {
+          // Load gross income from income collection
+          if (incomeData != null) {
+            if (incomeData['grossSalary'] != null && incomeData['grossSalary'] > 0) {
+              grossIncomeController.text = incomeData['grossSalary'].toString();
+            }
+            if (incomeData['taxableSalary'] != null && incomeData['taxableSalary'] > 0) {
+              taxableSalaryController.text = incomeData['taxableSalary'].toString();
+            }
+          }
+
+          // Load 80C deductions
+          if (deductionsData != null) {
+            if (deductionsData['epf'] != null && deductionsData['epf'] > 0) {
+              epfController.text = deductionsData['epf'].toString();
+              epfSelected = true;
+            }
+            if (deductionsData['lifeInsurance'] != null && deductionsData['lifeInsurance'] > 0) {
+              lifeInsuranceController.text = deductionsData['lifeInsurance'].toString();
+              lifeInsuranceSelected = true;
+            }
+            if (deductionsData['elss'] != null && deductionsData['elss'] > 0) {
+              elssController.text = deductionsData['elss'].toString();
+              elssSelected = true;
+            }
+            if (deductionsData['nsc'] != null && deductionsData['nsc'] > 0) {
+              nscController.text = deductionsData['nsc'].toString();
+              nscSelected = true;
+            }
+            if (deductionsData['tuition'] != null && deductionsData['tuition'] > 0) {
+              tuitionController.text = deductionsData['tuition'].toString();
+              tuitionSelected = true;
+            }
+
+            // Load 80D deductions
+            if (deductionsData['selfFamilyPremium'] != null && deductionsData['selfFamilyPremium'] > 0) {
+              selfFamilyPremiumController.text = deductionsData['selfFamilyPremium'].toString();
+            }
+            if (deductionsData['parentsPremium'] != null && deductionsData['parentsPremium'] > 0) {
+              parentsPremiumController.text = deductionsData['parentsPremium'].toString();
+            }
+            if (deductionsData['parentsSeniorCitizen'] != null) {
+              parentsSeniorCitizen = deductionsData['parentsSeniorCitizen'] as bool;
+            }
+
+            // Load 24 deduction
+            if (deductionsData['homeLoanInterest'] != null && deductionsData['homeLoanInterest'] > 0) {
+              homeLoanInterestController.text = deductionsData['homeLoanInterest'].toString();
+            }
+            if (deductionsData['isSelfOccupied'] != null) {
+              isSelfOccupied = deductionsData['isSelfOccupied'] as bool;
+            }
+
+            // Load other deductions
+            if (deductionsData['educationLoan'] != null && deductionsData['educationLoan'] > 0) {
+              educationLoanController.text = deductionsData['educationLoan'].toString();
+            }
+            if (deductionsData['donation'] != null && deductionsData['donation'] > 0) {
+              donationController.text = deductionsData['donation'].toString();
+            }
+            if (deductionsData['npsExtra'] != null && deductionsData['npsExtra'] > 0) {
+              npsExtraController.text = deductionsData['npsExtra'].toString();
+            }
+            if (deductionsData['savingsInterest'] != null && deductionsData['savingsInterest'] > 0) {
+              savingsInterestController.text = deductionsData['savingsInterest'].toString();
+            }
+          }
+
+          _loading = false;
+        });
+        print('DEBUG: Deductions data loaded successfully');
+      } else {
+        setState(() => _loading = false);
+      }
+    } catch (e) {
+      print('DEBUG: Error loading deductions data: $e');
+      setState(() => _loading = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    epfController.dispose();
+    lifeInsuranceController.dispose();
+    elssController.dispose();
+    nscController.dispose();
+    tuitionController.dispose();
+    selfFamilyPremiumController.dispose();
+    parentsPremiumController.dispose();
+    homeLoanInterestController.dispose();
+    educationLoanController.dispose();
+    donationController.dispose();
+    npsExtraController.dispose();
+    savingsInterestController.dispose();
+    grossIncomeController.dispose();
+    taxableSalaryController.dispose();
+    super.dispose();
+  }
+
+  double _calculate80C() {
+    double total = 0;
+    if (epfSelected) total += double.tryParse(epfController.text) ?? 0;
+    if (lifeInsuranceSelected)
+      total += double.tryParse(lifeInsuranceController.text) ?? 0;
+    if (elssSelected) total += double.tryParse(elssController.text) ?? 0;
+    if (nscSelected) total += double.tryParse(nscController.text) ?? 0;
+    if (tuitionSelected) total += double.tryParse(tuitionController.text) ?? 0;
+    return total > 150000 ? 150000 : total;
+  }
+
+  double _calculate80D() {
+    double selfFamilyLimit = 25000;
+    double parentsLimit = 25000;
+    if (parentsSeniorCitizen) parentsLimit = 50000;
+
+    double selfFamily = double.tryParse(selfFamilyPremiumController.text) ?? 0;
+    double parents = double.tryParse(parentsPremiumController.text) ?? 0;
+
+    selfFamily = selfFamily > selfFamilyLimit ? selfFamilyLimit : selfFamily;
+    parents = parents > parentsLimit ? parentsLimit : parents;
+
+    return selfFamily + parents;
+  }
+
+  double _calculate24() {
+    double amount = double.tryParse(homeLoanInterestController.text) ?? 0;
+    double limit = isSelfOccupied ? 200000 : 0; // Only self-occupied has limit
+    if (isSelfOccupied) {
+      return amount > limit ? limit : amount;
+    }
+    return amount;
+  }
+
+  double _getTotalDeductions() {
+    return _calculate80C() +
+        _calculate80D() +
+        _calculate24() +
+        (double.tryParse(educationLoanController.text) ?? 0) +
+        (double.tryParse(donationController.text) ?? 0) +
+        (double.tryParse(npsExtraController.text) ?? 0) +
+        (double.tryParse(savingsInterestController.text) ?? 0);
+  }
+
+  double _getTaxableIncome() {
+    double grossIncome = double.tryParse(grossIncomeController.text) ?? 0;
+    double calculatedTaxable = grossIncome - _getTotalDeductions();
+    return calculatedTaxable < 0 ? 0 : calculatedTaxable;
+  }
+
+  double _getEstimatedTaxSaved() {
+    return _getTotalDeductions() * 0.30; // Approximate at 30%
+  }
+
+  Widget _expandCard(String title, String subtitle, List<Widget> children) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      child: ExpansionTile(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+            Text(
+              subtitle,
+              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+            ),
+          ],
+        ),
+        children: children,
+      ),
+    );
+  }
+
+  Widget _checkboxInput(
+    String label,
+    bool value,
+    Function(bool?) onChanged,
+    TextEditingController controller,
+    String? hint,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Checkbox(value: value, onChanged: onChanged),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+                SizedBox(
+                  height: 32,
+                  child: TextField(
+                    controller: controller,
+                    enabled: value,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: hint ?? '₹ 0',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 6,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+
+    try {
+      await _firebaseService.saveDeductions(
+        section80c: _calculate80C(),
+        section80d: _calculate80D(),
+        section80ccd: double.tryParse(npsExtraController.text) ?? 0,
+        section24: _calculate24(),
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Deductions saved successfully')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving deductions: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text(
+            "Deductions",
+            style: TextStyle(color: AppColors.widgetBackground, fontSize: 27),
+          ),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          "Deductions",
+          style: TextStyle(color: Colors.white, fontSize: 27),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryVeryLight,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.secondary),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Deductions reduce your taxable income and help you save tax legally.',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Enter amounts you have invested or spent under different sections of the Income Tax Act.',
+                      style: TextStyle(fontSize: 14, color: AppColors.textMuted),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.amber.shade200),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.amber, size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'You only need to fill sections that apply to you.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.amber,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Gross Income Input (Read-Only)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.green.shade200),
+                ),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: grossIncomeController,
+                      readOnly: true,
+                      decoration: InputDecoration(
+                        labelText: 'Gross Salary (₹)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        prefixIcon: const Icon(Icons.currency_rupee),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: taxableSalaryController,
+                      readOnly: true,
+                      decoration: InputDecoration(
+                        labelText: 'Taxable Salary (From Form 16)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        prefixIcon: const Icon(Icons.currency_rupee),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Section 80C
+              _expandCard(
+                'Section 80C – Investments & Savings',
+                'Maximum ₹1,50,000',
+                [
+                  _checkboxInput(
+                    'EPF / PPF',
+                    epfSelected,
+                    (val) => setState(() => epfSelected = val ?? false),
+                    epfController,
+                    '₹ 0',
+                  ),
+                  _checkboxInput(
+                    'Life Insurance Premium',
+                    lifeInsuranceSelected,
+                    (val) =>
+                        setState(() => lifeInsuranceSelected = val ?? false),
+                    lifeInsuranceController,
+                    '₹ 0',
+                  ),
+                  _checkboxInput(
+                    'ELSS Mutual Funds',
+                    elssSelected,
+                    (val) => setState(() => elssSelected = val ?? false),
+                    elssController,
+                    '₹ 0',
+                  ),
+                  _checkboxInput(
+                    'NSC / Tax-saving FD',
+                    nscSelected,
+                    (val) => setState(() => nscSelected = val ?? false),
+                    nscController,
+                    '₹ 0',
+                  ),
+                  _checkboxInput(
+                    'Tuition Fees (children)',
+                    tuitionSelected,
+                    (val) => setState(() => tuitionSelected = val ?? false),
+                    tuitionController,
+                    '₹ 0',
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryVeryLight,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Eligible Deduction:',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            '₹${_calculate80C().toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              // Section 80D
+              _expandCard(
+                'Section 80D – Health Insurance',
+                'Self & Family + Parents coverage',
+                [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: TextField(
+                      controller: selfFamilyPremiumController,
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) => setState(() {}),
+                      decoration: InputDecoration(
+                        labelText: 'Self & Family Premium (₹)',
+                        helperText: 'Limit: ₹25,000',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: TextField(
+                      controller: parentsPremiumController,
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) => setState(() {}),
+                      decoration: InputDecoration(
+                        labelText: 'Parents Premium (₹)',
+                        helperText: parentsSeniorCitizen
+                            ? 'Limit: ₹50,000 (Senior Citizen)'
+                            : 'Limit: ₹25,000',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Are parents senior citizens?'),
+                        Switch(
+                          value: parentsSeniorCitizen,
+                          onChanged: (val) =>
+                              setState(() => parentsSeniorCitizen = val),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryVeryLight,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Total Deduction:',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            '₹${_calculate80D().toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              // Section 24 - Home Loan Interest
+              _expandCard(
+                'Section 24(b) – Home Loan Interest',
+                'Self-occupied or Rented property',
+                [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: TextField(
+                      controller: homeLoanInterestController,
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) => setState(() {}),
+                      decoration: InputDecoration(
+                        labelText: 'Interest Paid (₹)',
+                        helperText: isSelfOccupied
+                            ? 'Max deduction: ₹2,00,000'
+                            : 'Full amount deductible',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Self-occupied property?'),
+                        Switch(
+                          value: isSelfOccupied,
+                          onChanged: (val) =>
+                              setState(() => isSelfOccupied = val),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              // Section 80E - Education Loan Interest
+              _expandCard(
+                'Section 80E – Education Loan Interest',
+                'No limit on deduction',
+                [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: TextField(
+                      controller: educationLoanController,
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) => setState(() {}),
+                      decoration: InputDecoration(
+                        labelText: 'Interest Paid on Education Loan (₹)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              // Section 80G - Donations
+              _expandCard(
+                'Section 80G – Donations',
+                '50% or 100% deduction based on charity type',
+                [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: TextField(
+                      controller: donationController,
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) => setState(() {}),
+                      decoration: InputDecoration(
+                        labelText: 'Donations to Approved Charities (₹)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              // Section 80CCD(1B) - NPS Extra
+              _expandCard(
+                'Section 80CCD(1B) – NPS Additional',
+                'Extra ₹50,000 beyond 80C limit',
+                [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: TextField(
+                      controller: npsExtraController,
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) => setState(() {}),
+                      decoration: InputDecoration(
+                        labelText: 'NPS Contribution (₹)',
+                        helperText: 'Max: ₹50,000 (in addition to 80C)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              // Section 80TTA/80TTB - Savings Interest
+              _expandCard(
+                'Section 80TTA / 80TTB – Savings Interest',
+                'Interest from savings account & fixed deposits',
+                [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: TextField(
+                      controller: savingsInterestController,
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) => setState(() {}),
+                      decoration: InputDecoration(
+                        labelText: 'Savings/Interest Income (₹)',
+                        helperText:
+                            '80TTA: ₹10,000 limit | 80TTB: ₹50,000 (Senior Citizen)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              // Summary Card
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.secondary, width: 2),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '📊 Deduction Summary',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Gross Income:'),
+                        Text(
+                          '₹${(double.tryParse(grossIncomeController.text) ?? 0).toStringAsFixed(0)}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Total Deductions:'),
+                        Text(
+                          '₹${_getTotalDeductions().toStringAsFixed(0)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Taxable Income:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        Text(
+                          '₹${_getTaxableIncome().toStringAsFixed(0)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Estimated Tax Saved:',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            '₹${_getEstimatedTaxSaved().toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Save Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _saving ? null : _save,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    backgroundColor: AppColors.primary,
+                  ),
+                  child: _saving
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(
+                              AppColors.widgetBackground,
+                            ),
+                          ),
+                        )
+                      : const Text(
+                          'Save',
+                          style: TextStyle(color: AppColors.widgetBackground),
+                        ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
