@@ -15,6 +15,7 @@ import 'screens/ai_advice.dart';
 import 'screens/summary.dart';
 import 'screens/profile_edit.dart';
 import 'screens/recommendations.dart';
+import 'screens/tax_glossary.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -88,6 +89,7 @@ class TaxApp extends StatelessWidget {
         '/profile': (_) => const ProfileEditScreen(),
         '/recommendations': (_) => const RecommendationsScreen(),
         '/ai_advice': (_) => const AiAdviceScreen(),
+        '/understanding_tax': (_) => const UnderstandingTaxScreen(),
       },
     );
   }

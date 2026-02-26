@@ -28,6 +28,11 @@ class _HomeScreenState extends State<HomeScreen>
       "icon": Icons.calculate,
     },
     {"title": "AI Advisor", "route": "/ai_advice", "icon": Icons.smart_toy},
+    {
+      "title": "Understanding Tax",
+      "route": "/understanding_tax",
+      "icon": Icons.school,
+    },
   ];
 
   @override
