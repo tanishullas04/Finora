@@ -164,8 +164,9 @@ class _DeductionsScreenState extends State<DeductionsScreen> {
   double _calculate80C() {
     double total = 0;
     if (epfSelected) total += double.tryParse(epfController.text) ?? 0;
-    if (lifeInsuranceSelected)
+    if (lifeInsuranceSelected) {
       total += double.tryParse(lifeInsuranceController.text) ?? 0;
+    }
     if (elssSelected) total += double.tryParse(elssController.text) ?? 0;
     if (nscSelected) total += double.tryParse(nscController.text) ?? 0;
     if (tuitionSelected) total += double.tryParse(tuitionController.text) ?? 0;

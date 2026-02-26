@@ -24,6 +24,17 @@ class FirebaseService {
     });
   }
 
+  /// Update user profile fields (merges with existing data)
+  Future<void> updateUserProfile({
+    required String userId,
+    required Map<String, dynamic> data,
+  }) async {
+    await _firestore.collection('users').doc(userId).set(
+      data..['updatedAt'] = FieldValue.serverTimestamp(),
+      SetOptions(merge: true),
+    );
+  }
+
   /// Get user profile
   Future<Map<String, dynamic>?> getUserProfile(String userId) async {
     final doc = await _firestore.collection('users').doc(userId).get();

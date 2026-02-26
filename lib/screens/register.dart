@@ -41,9 +41,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         // Create Firebase Authentication account
         final UserCredential userCredential = await FirebaseAuth.instance
             .createUserWithEmailAndPassword(
-          email: _emailCtrl.text.trim(),
-          password: _passwordCtrl.text.trim(),
-        );
+              email: _emailCtrl.text.trim(),
+              password: _passwordCtrl.text.trim(),
+            );
 
         // Save user profile to Firestore
         await _firebaseService.createUserProfile(
@@ -56,7 +56,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Account created successfully!")),
           );
-          Navigator.pushReplacementNamed(context, '/home');
+          // after registering, send user back to login screen instead of home
+          Navigator.pushReplacementNamed(context, '/login');
         }
       } on FirebaseAuthException catch (e) {
         String errorMessage = "Registration failed";
@@ -67,17 +68,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
         } else if (e.code == 'invalid-email') {
           errorMessage = "The email address is invalid";
         }
-        
+
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(errorMessage)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(errorMessage)));
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Error: ${e.toString()}")),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("Error: ${e.toString()}")));
         }
       } finally {
         if (mounted) {
@@ -93,7 +94,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Register", style: TextStyle(color: AppColors.widgetBackground, fontSize: 27)),
+        title: const Text(
+          "Register",
+          style: TextStyle(color: AppColors.widgetBackground, fontSize: 27),
+        ),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -105,10 +109,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 const Text(
                   "Create account 📝",
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 4),
                 const Text(
@@ -145,7 +146,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     if (value == null || value.isEmpty) {
                       return "Please enter your email";
                     }
-                    if (!value.contains("@")) {
+                    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+                    if (!emailRegex.hasMatch(value)) {
                       return "Enter a valid email";
                     }
                     return null;
@@ -227,7 +229,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
                             )
                           : const Text(
@@ -256,7 +260,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                   ],
-                )
+                ),
               ],
             ),
           ),

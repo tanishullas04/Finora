@@ -81,13 +81,15 @@ class _LoginScreenState extends State<LoginScreen> {
         msg = "Enter a valid email address";
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: ${e.toString()}")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error: ${e.toString()}")));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -101,16 +103,48 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       try {
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: _emailCtrl.text.trim(),
-          password: _passwordCtrl.text.trim(),
-        );
+        // Sign in user
+        UserCredential userCredential = await FirebaseAuth.instance
+            .signInWithEmailAndPassword(
+              email: _emailCtrl.text.trim(),
+              password: _passwordCtrl.text.trim(),
+            );
 
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
+        User? user = userCredential.user;
+
+        if (user != null) {
+          // 🔹 Check if email is verified
+          if (!user.emailVerified) {
+            // Send verification email
+            await user.sendEmailVerification();
+
+            // Sign out user
+            await FirebaseAuth.instance.signOut();
+
+            if (mounted) {
+              ScaffoldMessenger.of(context)
+                ..hideCurrentSnackBar()
+                ..showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      "Email not verified. Verification link sent to your email.",
+                    ),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+            }
+
+            return; // Stop further execution
+          }
+
+          // ✅ Email verified → proceed to home
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, '/home');
+          }
         }
       } on FirebaseAuthException catch (e) {
         String errorMessage = "Login failed";
+
         if (e.code == 'user-not-found') {
           errorMessage = "No user found with this email";
         } else if (e.code == 'wrong-password') {
@@ -120,17 +154,17 @@ class _LoginScreenState extends State<LoginScreen> {
         } else if (e.code == 'user-disabled') {
           errorMessage = "This account has been disabled";
         }
-        
+
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(errorMessage)),
-          );
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text(errorMessage)));
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Error: ${e.toString()}")),
-          );
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text("Error: ${e.toString()}")));
         }
       } finally {
         if (mounted) {
@@ -146,7 +180,10 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Login", style: TextStyle(color: AppColors.widgetBackground, fontSize: 27)),
+        title: const Text(
+          "Login",
+          style: TextStyle(color: AppColors.widgetBackground, fontSize: 27),
+        ),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -158,10 +195,7 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const Text(
                   "Welcome back 👋",
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -182,7 +216,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     if (value == null || value.isEmpty) {
                       return "Please enter your email";
                     }
-                    if (!value.contains("@")) {
+                    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+                    if (!emailRegex.hasMatch(value)) {
                       return "Enter a valid email";
                     }
                     return null;
@@ -241,13 +276,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
                             )
-                          : const Text(
-                              "Login",
-                              style: TextStyle(fontSize: 16),
-                            ),
+                          : const Text("Login", style: TextStyle(fontSize: 16)),
                     ),
                   ),
                 ),
@@ -270,7 +304,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ],
-                )
+                ),
               ],
             ),
           ),

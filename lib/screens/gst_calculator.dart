@@ -3,13 +3,14 @@ import '../theme/app_colors.dart';
 import 'package:finora/services/firebase_service.dart';
 
 class GSTCalculator extends StatefulWidget {
-  const GSTCalculator({Key? key}) : super(key: key);
+  const GSTCalculator({super.key});
 
   @override
   State<GSTCalculator> createState() => _GSTCalculatorState();
 }
 
 enum GSTStep { typeSelection, priceInput, location, itemType, result }
+
 enum SellerType { goods, services }
 
 // Indian States and Union Territories
@@ -304,7 +305,10 @@ class _GSTCalculatorState extends State<GSTCalculator> {
                           SizedBox(height: 8),
                           Text(
                             'Answer a few simple questions and we\'ll calculate it for you.',
-                            style: TextStyle(fontSize: 13, color: AppColors.primary),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.primary,
+                            ),
                           ),
                         ],
                       ),
@@ -617,7 +621,7 @@ class _GSTCalculatorState extends State<GSTCalculator> {
                                   ),
                                 );
                               })
-                              .toList(),
+                              ,
                         ],
                       ),
                     ),
@@ -701,23 +705,7 @@ class _GSTCalculatorState extends State<GSTCalculator> {
                             child: const Text('Start Over'),
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: _saveAndContinue,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                            ),
-                            child: const Text(
-                              'Continue',
-                              style: TextStyle(
-                                color: AppColors.widgetBackground,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
+                        // removed continue button per request
                       ],
                     ),
                   ],
@@ -792,7 +780,9 @@ class _GSTCalculatorState extends State<GSTCalculator> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryLight : AppColors.widgetBackground,
+          color: isSelected
+              ? AppColors.primaryLight
+              : AppColors.widgetBackground,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.border,
@@ -812,9 +802,7 @@ class _GSTCalculatorState extends State<GSTCalculator> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: isSelected
-                          ? AppColors.primary
-                          : AppColors.text,
+                      color: isSelected ? AppColors.primary : AppColors.text,
                     ),
                   ),
                   Text(
