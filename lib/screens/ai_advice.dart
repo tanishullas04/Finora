@@ -16,7 +16,7 @@ class _AiAdviceScreenState extends State<AiAdviceScreen> {
   bool _loading = false;
   bool _backendHealthy = false;
   List<String> _suggestions = [];
-  List<Map<String, String>> _chatHistory = [];
+  final List<Map<String, String>> _chatHistory = [];
 
   @override
   void initState() {

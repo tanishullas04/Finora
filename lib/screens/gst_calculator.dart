@@ -3,7 +3,7 @@ import '../theme/app_colors.dart';
 import 'package:finora/services/firebase_service.dart';
 
 class GSTCalculator extends StatefulWidget {
-  const GSTCalculator({Key? key}) : super(key: key);
+  const GSTCalculator({super.key});
 
   @override
   State<GSTCalculator> createState() => _GSTCalculatorState();
@@ -621,7 +621,7 @@ class _GSTCalculatorState extends State<GSTCalculator> {
                                   ),
                                 );
                               })
-                              .toList(),
+                              ,
                         ],
                       ),
                     ),

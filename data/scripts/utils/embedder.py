@@ -13,7 +13,7 @@ def get_embedding_model():
     if _embedding_model is None:
         from sentence_transformers import SentenceTransformer
         print("[embedder] Loading embedding model (first time only)...")
-        _embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+        _embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
         print("[embedder] Model loaded successfully")
     return _embedding_model
 

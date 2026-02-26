@@ -137,7 +137,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
 
         try {
           final fileBytes = file.bytes!;
-          print('DEBUG: File selected - ${_selectedFileName} (${fileBytes.length} bytes)');
+          print('DEBUG: File selected - $_selectedFileName (${fileBytes.length} bytes)');
           
           // Send to backend for OCR
           print('DEBUG: Calling OCR service...');

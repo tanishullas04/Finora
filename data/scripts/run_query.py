@@ -1,3 +1,4 @@
+print("RUN_QUERY LOADED FROM:", __file__)
 import os
 import json
 import re
@@ -15,16 +16,29 @@ EMBED_DIR = os.path.join(PROJECT_ROOT, "embeddings")
 
 
 def load_index(index_name: str):
-    """Load the index.jsonl file and return all vectors"""
     index_path = os.path.join(EMBED_DIR, index_name, "index.jsonl")
 
     if not os.path.exists(index_path):
         raise FileNotFoundError(f"Index not found: {index_path}")
 
     entries = []
-    with open(index_path, "r") as f:
-        for line in f:
-            entries.append(json.loads(line))
+
+    # Read entire file as bytes
+    with open(index_path, "rb") as f:
+        raw = f.read()
+
+    # Decode safely
+    text = raw.decode("utf-8", errors="replace")
+
+    # Split manually into lines
+    for line in text.splitlines():
+        if line.strip():
+            try:
+                entries.append(json.loads(line))
+            except Exception as e:
+                print("[warning] Skipping bad JSON line:", e)
+
+    print(f"[index] Loaded {len(entries)} entries")
     return entries
 
 
@@ -806,7 +820,7 @@ Answer the question completely using the information above. Structure your respo
         
         # Try llama3.2 first (installed and fast), then phi3
         # llama3.2 is better for detailed tax responses
-        models_to_try = ['llama3.2', 'phi3']
+        models_to_try = ['llama3', 'mistral', 'phi3']
         max_retries = 2  # Limit retries per model to prevent infinite loops
         
         for model in models_to_try:

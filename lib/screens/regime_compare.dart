@@ -112,9 +112,9 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
     if (ltcgRealEstate > 0) {
       double tax = ltcgRealEstate * 0.20;
       double surcharge = 0;
-      if ((_totalIncome + ltcgRealEstate) > 5000000)
+      if ((_totalIncome + ltcgRealEstate) > 5000000) {
         surcharge = tax * 0.25;
-      else if ((_totalIncome + ltcgRealEstate) > 1000000)
+      } else if ((_totalIncome + ltcgRealEstate) > 1000000)
         surcharge = tax * 0.15;
       else if ((_totalIncome + ltcgRealEstate) > 500000)
         surcharge = tax * 0.10;
@@ -129,9 +129,9 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
     if (ltcgMutualFunds > 0) {
       double tax = ltcgMutualFunds * 0.15;
       double surcharge = 0;
-      if ((_totalIncome + ltcgMutualFunds) > 5000000)
+      if ((_totalIncome + ltcgMutualFunds) > 5000000) {
         surcharge = tax * 0.25;
-      else if ((_totalIncome + ltcgMutualFunds) > 1000000)
+      } else if ((_totalIncome + ltcgMutualFunds) > 1000000)
         surcharge = tax * 0.15;
       else if ((_totalIncome + ltcgMutualFunds) > 500000)
         surcharge = tax * 0.10;
@@ -143,9 +143,9 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
     if (ltcgOther > 0) {
       double tax = ltcgOther * 0.20;
       double surcharge = 0;
-      if ((_totalIncome + ltcgOther) > 5000000)
+      if ((_totalIncome + ltcgOther) > 5000000) {
         surcharge = tax * 0.25;
-      else if ((_totalIncome + ltcgOther) > 1000000)
+      } else if ((_totalIncome + ltcgOther) > 1000000)
         surcharge = tax * 0.15;
       else if ((_totalIncome + ltcgOther) > 500000)
         surcharge = tax * 0.10;
@@ -183,9 +183,9 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
 
     // Surcharge (progressive based on income)
     double surcharge = 0;
-    if (income > 5000000)
+    if (income > 5000000) {
       surcharge = tax * 0.25;
-    else if (income > 1000000)
+    } else if (income > 1000000)
       surcharge = tax * 0.15;
     else if (income > 500000)
       surcharge = tax * 0.10;
@@ -224,9 +224,9 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
 
     // Surcharge (same as old regime, progressive based on income)
     double surcharge = 0;
-    if (income > 5000000)
+    if (income > 5000000) {
       surcharge = tax * 0.25;
-    else if (income > 1000000)
+    } else if (income > 1000000)
       surcharge = tax * 0.15;
     else if (income > 500000)
       surcharge = tax * 0.10;
@@ -272,7 +272,7 @@ class _RegimeCompareScreenState extends State<RegimeCompareScreen> {
                   ],
                 ),
               )
-              .toList(),
+              ,
         ],
       ),
     );

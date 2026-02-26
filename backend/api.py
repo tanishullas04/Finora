@@ -479,4 +479,10 @@ if __name__ == '__main__':
     print("📍 Suggestions: http://localhost:5001/suggestions")
     print("\n" + "=" * 60 + "\n")
     
-    app.run(host='0.0.0.0', port=5001, debug=True, threaded=True)
+    app.run(
+    host='0.0.0.0',
+    port=5001,
+    debug=True,
+    threaded=True,
+    use_reloader=False   
+)
