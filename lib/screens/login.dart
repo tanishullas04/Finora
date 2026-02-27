@@ -264,12 +264,23 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _login,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      minWidth: 250,
+                      maxWidth: 450,
+                    ),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        textStyle: const TextStyle(fontSize: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: _isLoading ? null : _login,
                       child: _isLoading
                           ? const SizedBox(
                               height: 20,
@@ -281,11 +292,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                             )
-                          : const Text("Login", style: TextStyle(fontSize: 16)),
+                          : const Text("Login"),
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
