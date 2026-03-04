@@ -29,8 +29,11 @@ class FirebaseService {
     required String userId,
     required Map<String, dynamic> data,
   }) async {
+    // Use a new map — avoids mutating the caller's data object
+    final payload = Map<String, dynamic>.from(data);
+    payload['updatedAt'] = FieldValue.serverTimestamp();
     await _firestore.collection('users').doc(userId).set(
-      data..['updatedAt'] = FieldValue.serverTimestamp(),
+      payload,
       SetOptions(merge: true),
     );
   }
