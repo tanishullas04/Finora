@@ -1,40 +1,32 @@
 import os
 import json
 from typing import List, Dict, Optional
+from sentence_transformers import SentenceTransformer
 
 EMBED_DIM = 384  # sentence-transformers/all-MiniLM-L6-v2 dimension
 
-# Initialize the embedding model once (lazy loading)
-_embedding_model = None
-
-def get_embedding_model():
-    """Lazy load the sentence transformer model."""
-    global _embedding_model
-    if _embedding_model is None:
-        from sentence_transformers import SentenceTransformer
-        print("[embedder] Loading embedding model (first time only)...")
-        _embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-        print("[embedder] Model loaded successfully")
-    return _embedding_model
+# Eagerly load the model at import time (not per-call)
+print("[embedder] Initializing embedding model...")
+_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+print("[embedder] Model loaded successfully")
 
 
 def embed_text(text: str, use_fake: bool = False) -> List[float]:
     """
     Embed a single text string using local sentence-transformers.
-    
+
     Args:
         text: The text to embed
         use_fake: If True, return fake embeddings for testing
-        
+
     Returns:
         A list of floats representing the embedding vector
     """
     if use_fake:
         return [0.0] * EMBED_DIM
-    
+
     try:
-        model = get_embedding_model()
-        embedding = model.encode(text, convert_to_numpy=True)
+        embedding = _model.encode(text, convert_to_numpy=True)
         return embedding.tolist()
     except Exception as e:
         print(f"[embedder] Warning: Failed to generate embedding: {e}")
@@ -45,16 +37,16 @@ def embed_text(text: str, use_fake: bool = False) -> List[float]:
 def load_vector_store(index_path: str) -> List[Dict]:
     """
     Load vectors from a JSONL index file.
-    
+
     Args:
         index_path: Path to the index.jsonl file
-        
+
     Returns:
         List of dictionaries containing id, text, metadata, and embedding
     """
     if not os.path.exists(index_path):
         raise FileNotFoundError(f"Index not found: {index_path}")
-    
+
     entries = []
     with open(index_path, "r", encoding="utf-8") as f:
         for line in f:
@@ -94,7 +86,7 @@ def build_embeddings_for_chunks(
     index_path = os.path.join(index_dir, index_name, "index.jsonl")
 
     print(f"[embedder] Generating embeddings for {len(chunks)} chunks...")
-    
+
     vectors = []
     for i, chunk in enumerate(chunks):
         if (i + 1) % 10 == 0:

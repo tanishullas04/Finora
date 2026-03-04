@@ -117,7 +117,6 @@ class _IncomeScreenState extends State<IncomeScreen> {
       if (result != null && mounted) {
         final file = result.files.single;
         
-        // Validate file bytes availability
         if (file.bytes == null) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -139,7 +138,6 @@ class _IncomeScreenState extends State<IncomeScreen> {
           final fileBytes = file.bytes!;
           print('DEBUG: File selected - $_selectedFileName (${fileBytes.length} bytes)');
           
-          // Send to backend for OCR
           print('DEBUG: Calling OCR service...');
           final incomeData = await _ocrService.extractIncomeFromFile(
             fileBytes,
@@ -151,7 +149,6 @@ class _IncomeScreenState extends State<IncomeScreen> {
           if (mounted) {
             if (incomeData != null && _isValidIncomeData(incomeData)) {
               setState(() {
-                // Map extracted data to fields
                 if (incomeData['grossSalary'] != null && incomeData['grossSalary'] > 0) {
                   grossSalaryCtrl.text = incomeData['grossSalary'].toString();
                 }
@@ -169,7 +166,6 @@ class _IncomeScreenState extends State<IncomeScreen> {
                 }
               });
 
-              // Show extraction summary dialog
               _showExtractionSummary(incomeData);
             } else {
               if (mounted) {
@@ -224,15 +220,16 @@ class _IncomeScreenState extends State<IncomeScreen> {
   }
 
   bool _isValidIncomeData(Map<String, dynamic> data) {
-    final hasAny = (data['taxableSalary'] ?? 0) > 0 ||
+    return (data['taxableSalary'] ?? 0) > 0 ||
         (data['grossSalary'] ?? 0) > 0 ||
         (data['otherIncome'] ?? 0) > 0 ||
         (data['rentalIncome'] ?? 0) > 0 ||
         (data['businessIncome'] ?? 0) > 0;
-    return hasAny;
   }
 
   void _showExtractionSummary(Map<String, dynamic> data) {
+    final bool partBMissing = data['partBMissing'] == true;
+
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -242,6 +239,34 @@ class _IncomeScreenState extends State<IncomeScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // FIX: Show warning when only Part A was found
+              if (partBMissing)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.shade300),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.warning_amber_rounded,
+                          color: Colors.orange.shade700, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Only Part A found. Please enter taxable salary manually.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.orange.shade800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               if (data['grossSalary'] != null && data['grossSalary'] > 0)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
@@ -290,13 +315,15 @@ class _IncomeScreenState extends State<IncomeScreen> {
   }
 
   Future<void> _save() async {
+    // FIX: declare grossSalary here so it's included in all validations
     final taxableSalary = double.tryParse(taxableSalaryCtrl.text) ?? 0;
+    final grossSalary = double.tryParse(grossSalaryCtrl.text) ?? 0;
     final other = double.tryParse(otherCtrl.text) ?? 0;
     final rent = double.tryParse(rentCtrl.text) ?? 0;
     final business = double.tryParse(businessCtrl.text) ?? 0;
 
-    // Validate no negative values
-    if (taxableSalary < 0 || other < 0 || rent < 0 || business < 0) {
+    // FIX: include grossSalary in negative check
+    if (taxableSalary < 0 || grossSalary < 0 || other < 0 || rent < 0 || business < 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('❌ Income values cannot be negative'),
@@ -306,7 +333,8 @@ class _IncomeScreenState extends State<IncomeScreen> {
       return;
     }
 
-    if (taxableSalary + other + rent + business == 0) {
+    // FIX: include grossSalary in the "at least one source" check
+    if (taxableSalary + grossSalary + other + rent + business == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('❌ Please enter at least one income source'),
@@ -319,10 +347,9 @@ class _IncomeScreenState extends State<IncomeScreen> {
     setState(() => _saving = true);
 
     try {
-      // Wrap with timeout
       await _firebaseService.saveIncome(
         taxableSalary: taxableSalary,
-        grossSalary: double.tryParse(grossSalaryCtrl.text) ?? 0,
+        grossSalary: grossSalary,
         otherIncome: other,
         rentalIncome: rent,
         businessIncome: business,
