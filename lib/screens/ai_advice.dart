@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/ai_service.dart';
 import '../services/firebase_service.dart';
@@ -17,6 +18,7 @@ class _AiAdviceScreenState extends State<AiAdviceScreen> {
   bool _backendHealthy = false;
   List<String> _suggestions = [];
   final List<Map<String, String>> _chatHistory = [];
+  StreamSubscription<String>? _streamSub;
 
   @override
   void initState() {
@@ -54,58 +56,7 @@ class _AiAdviceScreenState extends State<AiAdviceScreen> {
     setState(() => _suggestions = suggestions);
   }
 
-  Future<void> _askQuestion(String question) async {
-    if (question.trim().isEmpty) return;
-
-    if (!_backendHealthy) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'AI backend is not available. Please start the server.',
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      _loading = true;
-      _chatHistory.add({'role': 'user', 'content': question});
-    });
-
-    // Scroll to bottom
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
-
-    final result = await AiService.queryTaxAdvice(question);
-
-    setState(() {
-      _loading = false;
-      if (result['success'] == true) {
-        _chatHistory.add({
-          'role': 'assistant',
-          'content': result['answer'] ?? 'No answer available',
-          'processing_time': result['processing_time']?.toString() ?? '',
-        });
-      } else {
-        _chatHistory.add({
-          'role': 'error',
-          'content': '❌ ${result['error'] ?? "Unknown error"}',
-        });
-      }
-    });
-
-    _queryController.clear();
-
-    // Scroll to bottom after answer
+  void _scrollToBottom() {
     Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -117,8 +68,62 @@ class _AiAdviceScreenState extends State<AiAdviceScreen> {
     });
   }
 
+  Future<void> _askQuestion(String question) async {
+    if (question.trim().isEmpty || _loading) return;
+
+    if (!_backendHealthy) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('AI backend is not available. Please start the server.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    _queryController.clear();
+    setState(() {
+      _loading = true;
+      _chatHistory.add({'role': 'user', 'content': question});
+      // Add empty assistant bubble that will fill token by token
+      _chatHistory.add({'role': 'assistant', 'content': ''});
+    });
+    _scrollToBottom();
+
+    await _streamSub?.cancel();
+    _streamSub = AiService.queryTaxAdviceStream(question).listen(
+      (token) {
+        if (!mounted) return;
+        setState(() {
+          final last = _chatHistory.last;
+          _chatHistory[_chatHistory.length - 1] = {
+            ...last,
+            'content': (last['content'] ?? '') + token,
+          };
+        });
+        _scrollToBottom();
+      },
+      onError: (e) {
+        if (!mounted) return;
+        setState(() {
+          _chatHistory[_chatHistory.length - 1] = {
+            'role': 'error',
+            'content': '❌ \$e',
+          };
+          _loading = false;
+        });
+      },
+      onDone: () {
+        if (!mounted) return;
+        setState(() => _loading = false);
+        _scrollToBottom();
+      },
+    );
+  }
+
   @override
   void dispose() {
+    _streamSub?.cancel();
     _queryController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -200,18 +205,14 @@ class _AiAdviceScreenState extends State<AiAdviceScreen> {
           ),
 
           // Loading indicator
-          if (_loading)
-            Container(
-              padding: const EdgeInsets.all(12),
+          if (_loading && (_chatHistory.isEmpty || _chatHistory.last['content']!.isEmpty))
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Row(
-                children: const [
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  SizedBox(width: 12),
-                  Text('Analyzing tax documents...'),
+                children: [
+                  _WaveDots(),
+                  const SizedBox(width: 12),
+                  const Text('Finora is thinking…', style: TextStyle(fontSize: 13, color: Colors.black54)),
                 ],
               ),
             ),
@@ -403,6 +404,65 @@ class _AiAdviceScreenState extends State<AiAdviceScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── Wave dots typing indicator ───────────────────────────────────────────────
+class _WaveDots extends StatefulWidget {
+  const _WaveDots();
+  @override
+  State<_WaveDots> createState() => _WaveDotsState();
+}
+
+class _WaveDotsState extends State<_WaveDots> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, __) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(3, (i) {
+            // Each dot is offset by 1/3 of the cycle
+            final double offset = (i / 3);
+            // Map the animation value to a sine wave, shifted per dot
+            final double t = (_ctrl.value + offset) % 1.0;
+            final double dy = -6 * (1 - (2 * t - 1).abs()); // triangle wave: peak at t=0.5
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: Transform.translate(
+                offset: Offset(0, dy),
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Colors.indigo,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            );
+          }),
+        );
+      },
     );
   }
 }
